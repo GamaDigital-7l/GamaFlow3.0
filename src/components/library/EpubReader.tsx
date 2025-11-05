@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Epub from 'epubjs';
 import { showError } from '@/utils/toast';
+import { Button } from '@/components/ui/button';
 
 interface EpubReaderProps {
   fileUrl: string;
@@ -71,20 +72,20 @@ export const EpubReader: React.FC<EpubReaderProps> = ({ fileUrl }) => {
       <div ref={renditionRef} className="w-full" />
       {displayed && (
         <div className="flex justify-center items-center mt-4">
-          <button
+          <Button
             type="button"
             onClick={goToPrevPage}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md"
           >
             Anterior
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={goToNextPage}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md ml-4"
           >
             Próximo
-          </button>
+          </Button>
         </div>
       )}
     </div>

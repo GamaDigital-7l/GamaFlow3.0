@@ -3,6 +3,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { showError } from '@/utils/toast';
+import { Button } from '@/components/ui/button';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -49,25 +50,25 @@ export const PdfReader: React.FC<PdfReaderProps> = ({ fileUrl }) => {
         <Page pageNumber={pageNumber} width={700} />
       </Document>
       <div className="flex justify-center items-center mt-4">
-        <button
-          type="button"
+        <Button
+          variant="outline"
           disabled={pageNumber <= 1 || loadError}
           onClick={goToPrevPage}
-          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md disabled:opacity-50"
+          className="px-4 py-2"
         >
           Anterior
-        </button>
+        </Button>
         <p className="mx-4">
           Página {pageNumber || (numPages ? 1 : '--')} de {numPages || '--'}
         </p>
-        <button
-          type="button"
+        <Button
+          variant="outline"
           disabled={pageNumber >= (numPages || 0) || loadError}
           onClick={goToNextPage}
-          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md disabled:opacity-50"
+          className="px-4 py-2"
         >
           Próximo
-        </button>
+        </Button>
       </div>
     </div>
   );
