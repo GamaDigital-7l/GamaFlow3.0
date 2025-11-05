@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, BookOpen, Target, Star, Folder } from 'lucide-react';
+import { Loader2, BookOpen, Target, Star, Folder, Plus } from 'lucide-react';
 import { useLibrary } from '@/hooks/use-library';
 import { BookCard } from '@/components/library/BookCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { BookUploadForm } from '@/components/library/BookUploadForm';
 
 // Componente de Carrossel Horizontal
 interface BookCarouselProps {
@@ -43,6 +46,7 @@ const BookCarousel: React.FC<BookCarouselProps> = ({ title, books, linkTo }) => 
 
 const LibraryHome: React.FC = () => {
   const { library, continueReading, popularBooks, isLoading } = useLibrary();
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   
   // Simulação de Categorias (usando tags únicas)
   const categories = useMemo(() => {
@@ -58,7 +62,6 @@ const LibraryHome: React.FC = () => {
     }));
   }, [library, categories]);
 
-
   if (isLoading) {
     return (
       <div className="p-8 text-center">
@@ -70,7 +73,12 @@ const LibraryHome: React.FC = () => {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-4xl font-extrabold tracking-tight">Descubra e Continue Lendo</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-4xl font-extrabold tracking-tight">Descubra e Continue Lendo</h1>
+        <Button onClick={() => setIsUploadDialogOpen(true)} className="bg-dyad-500 hover:bg-dyad-600">
+          <Plus className="h-4 w-4 mr-2" /> Adicionar Livro
+        </Button>
+      </div>
       
       {/* 1. Continuar Lendo (Prioridade Máxima) */}
       {continueReading.length > 0 && (
@@ -107,6 +115,16 @@ const LibraryHome: React.FC = () => {
             <p className="text-muted-foreground mt-2">Adicione seus primeiros livros para começar a ler!</p>
         </Card>
       )}
+      
+      {/* Diálogo de Upload */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <h1 className="text-2xl font-bold">Adicionar Novo Livro</h1>
+          </DialogHeader>
+          <BookUploadForm onCancel={() => setIsUploadDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
