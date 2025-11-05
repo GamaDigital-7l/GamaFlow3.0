@@ -6,7 +6,10 @@ import { USERS_QUERY_KEY } from './use-user-management'; // Importando a chave d
 const FORCE_ADMIN_FUNCTION_URL = 'https://cxntiszohzgntyhbagga.supabase.co/functions/v1/force-admin';
 
 const callForceAdmin = async (): Promise<void> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  // Garante que a sessão mais recente seja obtida
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError) throw new Error(`Erro ao obter sessão: ${sessionError.message}`);
   if (!session) throw new Error("Usuário não logado.");
 
   const response = await fetch(FORCE_ADMIN_FUNCTION_URL, {
