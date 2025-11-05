@@ -7,7 +7,7 @@ import { format, parseISO, isSameMonth, isSameYear } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramNotifications } from './use-telegram-notifications';
-import { useWhatsappNotifications } from './use-whatsapp-notifications'; // NOVO
+import { useWhatsappNotifications } from './use-whatsapp-notifications'; 
 import { PostgrestError } from '@supabase/supabase-js';
 
 const CLIENTS_QUERY_KEY = 'allClients';
@@ -19,23 +19,20 @@ const columnOrder: KanbanColumnId[] = [
   'Edição',
   'Aprovado',
   'Publicado',
-  'Material Off', // NOVO
+  'Material Off', 
 ];
 
 // Função auxiliar para obter a URL base
 const getBaseUrl = () => {
-    // 1. Tenta usar a URL do navegador (ambiente de desenvolvimento ou acesso direto)
     if (typeof window !== 'undefined' && window.location.origin) {
         return window.location.origin;
     }
-    // 2. Usa a variável de ambiente VITE_PUBLIC_URL (ambiente de produção/Docker)
     return import.meta.env.VITE_PUBLIC_URL || 'http://localhost:5173';
 };
 
 
 // --- Mapeamento e Conversão ---
 
-// Mapeia snake_case do DB para camelCase do frontend
 const mapSupabaseClientToClient = (data: any): Client => ({
     id: data.id,
     name: data.name,
@@ -44,11 +41,10 @@ const mapSupabaseClientToClient = (data: any): Client => ({
     type: data.type as ClientType,
     color: data.color,
     phone: data.phone || undefined,
-    whatsappNumber: data.whatsapp_number || undefined, // ATUALIZADO
+    whatsappNumber: data.whatsapp_number || undefined, 
     email: data.email || undefined,
     cnpj: data.cnpj || undefined,
     monthlyPostGoal: data.monthly_post_goal,
-    // Converte posts JSONB de volta para o formato de frontend, garantindo que as datas sejam objetos Date
     posts: (data.posts || []).map((post: any) => ({
         ...post,
         dueDate: new Date(post.dueDate),
@@ -56,7 +52,6 @@ const mapSupabaseClientToClient = (data: any): Client => ({
     })) as Post[],
 });
 
-// Mapeia camelCase do frontend para snake_case do DB
 const mapClientToSupabase = (client: Omit<Client, 'posts'> & { posts?: Post[] }) => ({
     id: client.id,
     name: client.name,
@@ -65,11 +60,10 @@ const mapClientToSupabase = (client: Omit<Client, 'posts'> & { posts?: Post[] })
     type: client.type,
     color: client.color,
     phone: client.phone || null,
-    whatsapp_number: client.whatsappNumber || null, // ATUALIZADO
+    whatsapp_number: client.whatsappNumber || null, 
     email: client.email || null,
     cnpj: client.cnpj || null,
     monthly_post_goal: client.monthlyPostGoal,
-    // Posts são armazenados como JSONB. As datas devem ser strings ISO para serialização correta.
     posts: (client.posts || []).map(post => ({
         ...post,
         dueDate: post.dueDate.toISOString(),
@@ -94,15 +88,13 @@ const fetchClients = async (): Promise<Client[]> => {
     throw new Error(error.message);
   }
   
-  const origin = getBaseUrl(); // Usa a função robusta
+  const origin = getBaseUrl(); 
 
   return data.map(dbClient => {
     const client = mapSupabaseClientToClient(dbClient);
     
-    // Garante que o link de aprovação seja gerado corretamente
     client.posts = client.posts.map(post => {
         const newPost = { ...post };
-        // Se o link não estiver no formato correto, regenera
         if (!newPost.approvalLink || !newPost.approvalLink.includes(`/approval/${client.id}/`)) {
             newPost.approvalLink = `${origin}/approval/${client.id}/${post.id}`;
         }
@@ -113,9 +105,7 @@ const fetchClients = async (): Promise<Client[]> => {
   });
 };
 
-// Função para adicionar/atualizar cliente no DB
 const upsertClientToDB = async (clientData: Omit<Client, 'posts'> & { posts?: Post[] }): Promise<Client> => {
-    // Garante que o ID exista se for uma atualização, ou gera um novo se for criação
     const clientWithId = {
         ...clientData,
         id: clientData.id || uuidv4(),
@@ -133,7 +123,6 @@ const upsertClientToDB = async (clientData: Omit<Client, 'posts'> & { posts?: Po
     return mapSupabaseClientToClient(data);
 };
 
-// Função para deletar cliente (chama a Edge Function)
 const deleteClientData = async (clientId: string): Promise<void> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Sessão de admin necessária.");
@@ -153,15 +142,13 @@ const deleteClientData = async (clientId: string): Promise<void> => {
         throw new Error(result.error || 'Failed to delete client data via Edge Function.');
     }
     
-    // Deleta o cliente do DB (após deletar usuários Auth)
     const { error } = await supabase.from('clients').delete().eq('id', clientId);
     if (error) throw new Error(`Failed to delete client from DB: ${error.message}`);
 };
 
-// Função para registrar interação
 const registerInteraction = async (clientId: string, type: 'feedback' | 'edit_request', content: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return; // Não registra se não houver usuário logado (ex: aprovação pública)
+    if (!user) return; 
     
     const { error } = await supabase
         .from('client_interactions')
@@ -181,13 +168,12 @@ const registerInteraction = async (clientId: string, type: 'feedback' | 'edit_re
 export function useClientStore() {
   const queryClient = useQueryClient();
   const { notifyClientAction: notifyTelegram } = useTelegramNotifications();
-  const { notifyClientAction: notifyWhatsapp } = useWhatsappNotifications(); // NOVO
+  const { notifyClientAction: notifyWhatsapp } = useWhatsappNotifications(); 
 
-  // 1. Query Principal para buscar todos os clientes
   const { data: clients = [], isLoading } = useQuery<Client[], Error>({
     queryKey: [CLIENTS_QUERY_KEY],
     queryFn: fetchClients,
-    staleTime: 300000, // 5 minutos de cache
+    staleTime: 300000, 
   });
 
 
@@ -264,8 +250,8 @@ export function useClientStore() {
       return {
         ...client,
         completedPostsThisMonth,
-        completedCount,
         goal,
+        completedCount,
         percentage,
         progressStatus: status,
       };
@@ -275,23 +261,19 @@ export function useClientStore() {
 
   // --- Funções de Mutação (CRUD) ---
 
-  // Mutação para adicionar/atualizar clientes
   const clientMutation = useMutation({
     mutationFn: upsertClientToDB,
     onSuccess: (newClient) => {
       queryClient.invalidateQueries({ queryKey: [CLIENTS_QUERY_KEY] });
       showSuccess(`Cliente "${newClient.name}" salvo com sucesso!`);
-      // Retorna o ID do cliente para ser usado no mutateAsync
       return newClient.id; 
     },
     onError: (err) => {
       showError(`Erro ao salvar cliente: ${err.message}`);
-      // Retorna null ou lança erro para o mutateAsync
       throw err; 
     },
   });
 
-  // Mutação para deletar clientes
   const deleteClientMutation = useMutation({
     mutationFn: deleteClientData,
     onSuccess: () => {
@@ -303,7 +285,7 @@ export function useClientStore() {
     },
   });
 
-  // Mutação para adicionar/atualizar/deletar posts
+  // OTIMIZAÇÃO: Usar setQueryData para posts para evitar recarregar todos os clientes
   const postMutation = useMutation({
     mutationFn: async (action: { type: 'add' | 'update' | 'delete', clientId: string, payload: any }) => {
       const client = getClientById(action.clientId);
@@ -316,7 +298,7 @@ export function useClientStore() {
       if (action.type === 'add') {
         const newPostData = action.payload as Omit<Post, 'id' | 'approvalLink'> & { monthYear: string };
         const postId = `p${Date.now()}`;
-        const origin = getBaseUrl(); // Usa a função robusta
+        const origin = getBaseUrl(); 
         const approvalLink = `${origin}/approval/${action.clientId}/${postId}`;
 
         const newPost: Post = {
@@ -331,10 +313,7 @@ export function useClientStore() {
         postTitle = newPost.title;
         
         if (newPost.status === 'Aprovação') {
-            // Notificação Telegram
             notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM/yyyy')}`);
-            
-            // Notificação WhatsApp
             if (client.whatsappNumber) {
                 notifyWhatsapp(client.whatsappNumber, client.name, 'LINK GERADO', postTitle, `Acesse para aprovar: ${newPost.approvalLink}`);
             }
@@ -346,28 +325,20 @@ export function useClientStore() {
         postTitle = updatedPost.title;
         
         if (oldPost && oldPost.status === 'Aprovação' && updatedPost.status === 'Aprovado') {
-            // Notificação Telegram
             notifyTelegram(client.name, 'APROVOU', postTitle);
-            // Notificação WhatsApp
             if (client.whatsappNumber) {
                 notifyWhatsapp(client.whatsappNumber, client.name, 'APROVOU', postTitle);
             }
-            
-            // REGISTRA INTERAÇÃO: Aprovação
             await registerInteraction(client.id, 'feedback', `Aprovação do post: ${postTitle}`);
         } else if (oldPost && oldPost.status === 'Aprovação' && updatedPost.status === 'Edição') {
             const details = updatedPost.description.includes('EDIÇÃO SOLICITADA') 
                 ? updatedPost.description.split('--- Descrição Original ---')[0].trim()
                 : 'Verifique a descrição do post para detalhes.';
             
-            // Notificação Telegram
             notifyTelegram(client.name, 'PEDIU EDIÇÃO', postTitle, details);
-            // Notificação WhatsApp
             if (client.whatsappNumber) {
                 notifyWhatsapp(client.whatsappNumber, client.name, 'PEDIU EDIÇÃO', postTitle, details);
             }
-            
-            // REGISTRA INTERAÇÃO: Pedido de Edição
             await registerInteraction(client.id, 'edit_request', `Pedido de edição para o post: ${postTitle}. Detalhes: ${details}`);
         }
         
@@ -379,14 +350,13 @@ export function useClientStore() {
         successMessage = 'Post excluído com sucesso.';
       }
       
-      // Atualiza o cliente no DB com a nova lista de posts
       const updatedClientData = { ...client, posts };
       const result = await upsertClientToDB(updatedClientData);
       
       return { updatedClient: result, successMessage };
     },
     onSuccess: ({ updatedClient, successMessage }) => {
-      // Atualiza o cache localmente para refletir a mudança
+      // OTIMIZAÇÃO: Atualiza o cliente específico no cache
       queryClient.setQueryData<Client[]>([CLIENTS_QUERY_KEY], (oldClients) => {
         return oldClients?.map(c => c.id === updatedClient.id ? updatedClient : c) || [];
       });
@@ -401,7 +371,6 @@ export function useClientStore() {
   // --- Funções de Ação Expostas ---
 
   const addClient = (newClientData: Omit<Client, 'id' | 'posts'>) => {
-    // Retorna o ID do novo cliente
     return clientMutation.mutateAsync({ ...newClientData, posts: [] });
   };
   

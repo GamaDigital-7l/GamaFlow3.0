@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Função para enviar notificação via Telegram (reutilizando a lógica existente)
+// Função para enviar notificação via Telegram
 const sendTelegramNotification = async (botToken: string, chatId: string, message: string) => {
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
@@ -29,20 +29,14 @@ const sendTelegramNotification = async (botToken: string, chatId: string, messag
     }
 };
 
-// Função para buscar configurações do app (simulando busca no DB ou Secrets)
-// Em um ambiente real, buscaríamos isso de uma tabela 'app_settings' ou secrets.
-// Aqui, vamos simular a busca de secrets que o usuário deve configurar.
-const getTelegramConfig = (supabaseAdmin: any) => {
-    // Nota: Em um ambiente real, o SUPABASE_SERVICE_ROLE_KEY não tem acesso a secrets de Edge Function.
-    // O botToken e chatId deveriam ser passados como secrets da Edge Function.
-    // Para simplificar, vamos assumir que o botToken e chatId estão disponíveis como variáveis de ambiente Deno.
+// Função para buscar configurações do app (simulando busca em secrets)
+const getTelegramConfig = () => {
+    // Assume que os secrets estão configurados no ambiente Deno
+    const botToken = Deno.env.get('TELEGRAM_TASK_BOT_TOKEN');
+    const chatId = Deno.env.get('TELEGRAM_TASK_CHAT_ID');
     
-    const botToken = Deno.env.get('TELEGRAM_TASK_BOT_TOKEN') || 'SECRETO_BOT_TOKEN';
-    const chatId = Deno.env.get('TELEGRAM_TASK_CHAT_ID') || 'SECRETO_CHAT_ID';
-    
-    // Se não houver secrets configurados, a função não deve rodar.
-    if (botToken === 'SECRETO_BOT_TOKEN' || chatId === 'SECRETO_CHAT_ID') {
-        console.warn("Telegram secrets not configured. Skipping summary.");
+    if (!botToken || !chatId) {
+        console.warn("Telegram secrets not configured (TELEGRAM_TASK_BOT_TOKEN or TELEGRAM_TASK_CHAT_ID). Skipping summary.");
         return null;
     }
     
@@ -55,28 +49,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação (Apenas Service Role Key pode chamar esta função internamente)
-  // Nota: Esta função deve ser chamada por um cron job interno do Supabase,
-  // mas para testes, permitimos a chamada com a Service Role Key.
+  // 1. Autenticação (Permite Service Role Key ou Admin para testes)
   const authHeader = req.headers.get('Authorization')
   const isServiceRole = authHeader?.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? 'INVALID');
   
-  if (!isServiceRole) {
-    // Se não for a Service Role Key, verifica se é admin (para testes)
-    const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    );
-    const { data: { user } } = await supabase.auth.getUser(authHeader?.replace('Bearer ', ''));
-    
-    // Se não for Service Role Key nem Admin, nega o acesso
-    if (!user) {
-        return new Response('Unauthorized: Service Role or Admin required.', { status: 401, headers: corsHeaders })
-    }
-    // Se for admin, continua (para facilitar o teste manual)
-  }
-  
-  // Cria o cliente Supabase com a Service Role Key
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -87,10 +63,19 @@ serve(async (req) => {
       },
     }
   )
+  
+  if (!isServiceRole) {
+    const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader?.replace('Bearer ', ''));
+    const { data: profileData } = await supabaseAdmin.from('profiles').select('role').eq('id', user?.id).single();
+    
+    if (!user || profileData?.role !== 'admin') {
+        return new Response('Unauthorized: Service Role or Admin required.', { status: 401, headers: corsHeaders })
+    }
+  }
 
   try {
     // 2. Configuração do Telegram
-    const config = getTelegramConfig(supabaseAdmin);
+    const config = getTelegramConfig();
     if (!config) {
         return new Response(JSON.stringify({ message: 'Telegram config missing. Summary skipped.' }), {
             status: 200,
@@ -103,7 +88,7 @@ serve(async (req) => {
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const oneWeekAgoISO = oneWeekAgo.toISOString();
     
-    // 4. Coleta de Dados
+    // 4. Coleta de Dados (Usando supabaseAdmin para ignorar RLS)
     
     // A. Tarefas Concluídas
     const { data: completedTasks, error: tasksError } = await supabaseAdmin
@@ -119,7 +104,7 @@ serve(async (req) => {
         .from('goals')
         .select('id, title')
         .eq('status', 'Concluída')
-        .gte('updated_at', oneWeekAgoISO); // Assumindo que 'updated_at' muda ao concluir
+        .gte('due_date', oneWeekAgoISO); // Usando due_date como proxy para conclusão recente
         
     if (goalsError) throw new Error(`Failed to fetch goals: ${goalsError.message}`);
     
@@ -150,7 +135,7 @@ serve(async (req) => {
 👍 *${praises}* elogios recebidos.
 👎 *${improvements}* sugestões de melhoria.
 
-*3. Detalhes das Entregas:*
+*3. Detalhes das Entregas (Top 5):*
 ${completedTasks.slice(0, 5).map(t => `- ${t.title} (${t.client_name || 'Geral'})`).join('\n')}
 ${totalTasks > 5 ? `... e mais ${totalTasks - 5} tarefas.` : ''}
 

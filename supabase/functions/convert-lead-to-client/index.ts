@@ -11,12 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação (Verifica se o usuário é admin)
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
-  }
-  
   // Cria o cliente Supabase com a Service Role Key
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,8 +22,13 @@ serve(async (req) => {
       },
     }
   )
+  
+  // 1. Autenticação (Verifica se o usuário é admin)
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
 
-  // Verifica a role do usuário que está chamando a função
   const { data: { user: callerUser }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
   
   if (userError || !callerUser) {
@@ -39,7 +38,6 @@ serve(async (req) => {
     })
   }
 
-  // Busca a role do usuário chamador na tabela profiles
   const { data: profileData, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -64,10 +62,7 @@ serve(async (req) => {
       })
     }
 
-    // 3. Deletar o lead do banco de dados (após a conversão ser tratada no frontend)
-    // Nota: A lógica de criação do cliente é feita no frontend (use-crm-store)
-    // Esta função apenas garante a exclusão segura do lead após o sucesso da conversão.
-    
+    // 3. Deletar o lead do banco de dados
     const { error: deleteError } = await supabaseAdmin
       .from('leads')
       .delete()

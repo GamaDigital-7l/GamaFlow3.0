@@ -11,12 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação (Verifica se o usuário é admin)
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
-  }
-  
   // Cria o cliente Supabase com a Service Role Key
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,7 +23,12 @@ serve(async (req) => {
     }
   )
 
-  // Verifica a role do usuário que está chamando a função
+  // 1. Autenticação (Verifica se o usuário é admin)
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+
   const { data: { user: callerUser }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
   
   if (userError || !callerUser) {
@@ -39,7 +38,6 @@ serve(async (req) => {
     })
   }
 
-  // Busca a role do usuário chamador na tabela profiles
   const { data: profileData, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -70,13 +68,11 @@ serve(async (req) => {
       password,
       email_confirm: true, // Confirma o email automaticamente
       user_metadata: {
-        // Adiciona o email ao metadata para que possamos buscá-lo no frontend via profiles
         email: email, 
       }
     })
 
     if (authError) {
-      // Retorna o erro específico do Supabase Auth
       return new Response(JSON.stringify({ error: authError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -86,8 +82,7 @@ serve(async (req) => {
     // 4. Atualização do Perfil (Role e Client ID)
     const newUserId = newUser.user.id;
     
-    // Nota: O trigger handle_new_user já deve ter criado o perfil com role 'user'.
-    // Aqui, atualizamos para 'client' e vinculamos o client_id.
+    // O trigger handle_new_user já criou o perfil. Aqui, atualizamos.
     const { error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
       .update({ 
@@ -99,7 +94,6 @@ serve(async (req) => {
       .eq('id', newUserId)
       
     if (profileUpdateError) {
-      // Se falhar ao atualizar o perfil, deleta o usuário recém-criado para evitar lixo
       await supabaseAdmin.auth.admin.deleteUser(newUserId);
       return new Response(JSON.stringify({ error: `Failed to link profile: ${profileUpdateError.message}` }), {
         status: 500,

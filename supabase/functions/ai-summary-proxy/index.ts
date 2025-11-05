@@ -14,7 +14,6 @@ async function generateSummary(provider: 'groq' | 'openai', apiKey: string, prom
 
     if (provider === 'groq') {
         apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-        // Usando o modelo mais recente e estável do Groq
         model = 'llama-3.1-8b-instant'; 
         headers = {
             'Authorization': `Bearer ${apiKey}`,
@@ -66,7 +65,7 @@ serve(async (req) => {
     return new Response('Unauthorized', { status: 401, headers: corsHeaders })
   }
   
-  // Cria o cliente Supabase com a Service Role Key (não usado aqui, mas mantido por padrão)
+  // Cria o cliente Supabase com a Service Role Key (para verificar a sessão, se necessário)
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -79,7 +78,6 @@ serve(async (req) => {
   )
 
   try {
-    // Agora aceita 'prompt' genérico, além dos dados de tarefas
     const { tasksCompleted, tasksPending, provider, apiKey, prompt: genericPrompt } = await req.json();
 
     if (!provider || !apiKey) {
@@ -92,10 +90,8 @@ serve(async (req) => {
     let finalPrompt: string;
     
     if (genericPrompt) {
-        // Se um prompt genérico for fornecido (para propostas)
         finalPrompt = genericPrompt;
     } else {
-        // Se não, usa a lógica de resumo de tarefas (padrão)
         if (!tasksCompleted || !tasksPending) {
              return new Response(JSON.stringify({ error: 'Missing task data for daily summary.' }), {
                 status: 400,

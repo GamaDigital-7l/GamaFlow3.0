@@ -11,12 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação (Verifica se o usuário é admin)
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
-  }
-  
   // Cria o cliente Supabase com a Service Role Key
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,7 +23,12 @@ serve(async (req) => {
     }
   )
 
-  // Verifica a role do usuário que está chamando a função
+  // 1. Autenticação (Verifica se o usuário é admin)
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+
   const { data: { user: callerUser }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
   
   if (userError || !callerUser) {
@@ -39,7 +38,6 @@ serve(async (req) => {
     })
   }
 
-  // Busca a role do usuário chamador na tabela profiles
   const { data: profileData, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -83,20 +81,16 @@ serve(async (req) => {
     if (userIdsToDelete.length > 0) {
         console.log(`Deleting ${userIdsToDelete.length} users for client ${clientId}`);
         
-        // Supabase Admin API não tem um método de exclusão em massa por client_id,
-        // então iteramos sobre os IDs.
         for (const userId of userIdsToDelete) {
             const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(userId);
             if (deleteAuthError) {
                 console.error(`Failed to delete user ${userId}: ${deleteAuthError.message}`);
-                // Continuamos, mas registramos o erro
             }
         }
     }
     
-    // Nota: A exclusão de dados do cliente (posts, links, etc.) é tratada
-    // pelas políticas RLS e Foreign Keys no banco de dados, ou será simulada no frontend.
-    // O foco principal desta função é a exclusão dos usuários Auth.
+    // Nota: A exclusão do cliente do DB é feita no frontend (use-client-store) após esta função,
+    -- pois a exclusão dos usuários Auth deve acionar o CASCADE na tabela profiles.
 
     return new Response(JSON.stringify({ message: `Client users deleted successfully. Total users deleted: ${userIdsToDelete.length}` }), {
       status: 200,

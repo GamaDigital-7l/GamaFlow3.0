@@ -11,12 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação (Verifica se o usuário é admin)
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
-  }
-  
   // Cria o cliente Supabase com a Service Role Key
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,7 +23,12 @@ serve(async (req) => {
     }
   )
 
-  // Verifica a role do usuário que está chamando a função
+  // 1. Autenticação (Verifica se o usuário é admin)
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+
   const { data: { user: callerUser }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
   
   if (userError || !callerUser) {
@@ -39,7 +38,6 @@ serve(async (req) => {
     })
   }
 
-  // Busca a role do usuário chamador na tabela profiles
   const { data: profileData, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -84,7 +82,7 @@ serve(async (req) => {
     return {
       id: authUser.id,
       email: authUser.email,
-      role: profile?.role || 'user', // Padrão 'user' se o perfil não for encontrado
+      role: profile?.role || 'user', 
       client_id: profile?.client_id || null,
       first_name: profile?.first_name || null,
       last_name: profile?.last_name || null,

@@ -11,12 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação (Verifica se o usuário é admin)
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
-  }
-  
   // Cria o cliente Supabase com a Service Role Key
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,7 +23,12 @@ serve(async (req) => {
     }
   )
 
-  // Verifica a role do usuário que está chamando a função
+  // 1. Autenticação (Verifica se o usuário é admin)
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+
   const { data: { user: callerUser }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
   
   if (userError || !callerUser) {
@@ -39,7 +38,6 @@ serve(async (req) => {
     })
   }
 
-  // Busca a role do usuário chamador na tabela profiles
   const { data: profileData, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -68,17 +66,12 @@ serve(async (req) => {
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authError) {
-      // Retorna o erro específico do Supabase Auth
       return new Response(JSON.stringify({ error: authError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
     
-    // Nota: A exclusão do perfil (profiles) deve ser tratada pelo CASCADE do auth.users(id)
-    // se a foreign key foi configurada corretamente. Se não, a exclusão do Auth User
-    // é suficiente para impedir o login.
-
     return new Response(JSON.stringify({ message: 'User deleted successfully.' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

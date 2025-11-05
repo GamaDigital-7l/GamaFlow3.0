@@ -16,7 +16,7 @@ const TEMPLATES_QUERY_KEY = 'taskTemplates';
 const mapSupabaseTaskToTask = (data: any): Task => ({
   id: data.id,
   user_id: data.user_id,
-  assigneeId: data.assignee_id || undefined, // NOVO
+  assigneeId: data.assignee_id || undefined, 
   title: data.title,
   description: data.description || '',
   dueDate: new Date(data.due_date),
@@ -26,12 +26,11 @@ const mapSupabaseTaskToTask = (data: any): Task => ({
   isRecurrent: data.is_recurrent,
   clientName: data.client_name || undefined,
   completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
-  taskType: data.task_type as TaskType || undefined, // NOVO
+  taskType: data.task_type as TaskType || undefined, 
 });
 
 // --- Funções de Interação com o Supabase ---
 
-// 1. Buscar Tarefas (RLS agora filtra por user_id OU assignee_id)
 const fetchTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase
     .from('tasks')
@@ -39,14 +38,12 @@ const fetchTasks = async (): Promise<Task[]> => {
     .order('due_date', { ascending: true });
 
   if (error) {
-    // Se for erro de RLS, retorna vazio (o RLS deve garantir que o usuário veja apenas o que lhe é devido)
     if ((error as PostgrestError).code === '406' || (error as PostgrestError).code === '403') return [];
     throw new Error(error.message);
   }
   return data.map(mapSupabaseTaskToTask);
 };
 
-// 2. Adicionar Tarefa
 const addTaskToDB = async (newTask: Omit<Task, 'id' | 'status' | 'completedAt' | 'user_id'> & { assigneeId?: string }): Promise<Task> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado.");
@@ -54,8 +51,8 @@ const addTaskToDB = async (newTask: Omit<Task, 'id' | 'status' | 'completedAt' |
   const { data, error } = await supabase
     .from('tasks')
     .insert({
-      user_id: user.id, // Quem criou
-      assignee_id: newTask.assigneeId || user.id, // Quem é responsável (padrão: o criador)
+      user_id: user.id, 
+      assignee_id: newTask.assigneeId || user.id, 
       title: newTask.title,
       description: newTask.description,
       due_date: newTask.dueDate.toISOString(),
@@ -63,7 +60,7 @@ const addTaskToDB = async (newTask: Omit<Task, 'id' | 'status' | 'completedAt' |
       category: newTask.category,
       is_recurrent: newTask.isRecurrent,
       client_name: newTask.clientName,
-      task_type: newTask.taskType, // NOVO
+      task_type: newTask.taskType, 
       status: 'Pendente',
     })
     .select()
@@ -75,7 +72,6 @@ const addTaskToDB = async (newTask: Omit<Task, 'id' | 'status' | 'completedAt' |
   return mapSupabaseTaskToTask(data);
 };
 
-// 3. Atualizar Tarefa
 const updateTaskInDB = async (updatedTask: Task): Promise<Task> => {
   const { id, title, description, dueDate, priority, category, isRecurrent, clientName, status, completedAt, assigneeId, taskType } = updatedTask;
 
@@ -91,8 +87,8 @@ const updateTaskInDB = async (updatedTask: Task): Promise<Task> => {
       client_name: clientName,
       status,
       completed_at: completedAt ? completedAt.toISOString() : null,
-      assignee_id: assigneeId || null, // NOVO
-      task_type: taskType || null, // NOVO
+      assignee_id: assigneeId || null, 
+      task_type: taskType || null, 
     })
     .eq('id', id)
     .select()
@@ -104,7 +100,6 @@ const updateTaskInDB = async (updatedTask: Task): Promise<Task> => {
   return mapSupabaseTaskToTask(data);
 };
 
-// 4. Deletar Tarefa (mantido)
 const deleteTaskFromDB = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('tasks')
@@ -115,8 +110,6 @@ const deleteTaskFromDB = async (id: string): Promise<void> => {
     throw new Error(error.message);
   }
 };
-
-// --- Lógica de Geração de Tarefas Recorrentes (Templates Apenas) ---
 
 const DAY_MAP: Record<number, string> = {
   0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat'
@@ -136,7 +129,6 @@ const generateRecurrentTasks = async (
     t.isRecurrent && isSameDay(t.dueDate, today)
   );
 
-  // 1. Gerar Tarefas de Templates
   templates.filter(t => (t.daysOfWeek || []).includes(todayDayName as DayOfWeek)).forEach(template => {
     const alreadyExists = existingTodayRecurrentTasks.some(t => 
       t.title === template.title
@@ -161,8 +153,8 @@ const generateRecurrentTasks = async (
         category: template.category,
         isRecurrent: true,
         clientName: template.clientName,
-        taskType: template.taskType, // NOVO
-        assigneeId: currentUserId, // Atribui ao usuário logado (padrão)
+        taskType: template.taskType, 
+        assigneeId: currentUserId, 
       });
     }
   });
@@ -174,29 +166,26 @@ const generateRecurrentTasks = async (
 export function useTaskStore() {
   const queryClient = useQueryClient();
   const { notifyTaskAction } = useTelegramNotifications();
-  const { user, userRole, isLoading: isLoadingSession } = useSession();
+  const { user, isLoading: isLoadingSession } = useSession();
   
   const currentUserId = user?.id;
 
-  // 1. Busca de Tarefas (Dashboard)
   const { data: tasks = [], isLoading: isLoadingTasks, error } = useQuery<Task[], Error>({
     queryKey: [TASKS_QUERY_KEY],
     queryFn: fetchTasks,
     enabled: !!currentUserId && !isLoadingSession,
-    staleTime: 5000, // Dados frescos por 5 segundos
+    staleTime: 5000, 
   });
 
-  // 2. Busca de Templates (para geração)
   const { data: templates = [] } = useQuery<TaskTemplate[], Error>({
     queryKey: [TEMPLATES_QUERY_KEY],
     queryFn: async () => {
       const { data } = await supabase.from('task_templates').select('*');
       return data as TaskTemplate[] || [];
     },
-    staleTime: Infinity, // Templates raramente mudam
+    staleTime: Infinity, 
   });
 
-  // Mutação para Adicionar (usada internamente para geração)
   const addMutation = useMutation({
     mutationFn: addTaskToDB,
     onSuccess: (newTask) => {
@@ -213,7 +202,6 @@ export function useTaskStore() {
     },
   });
 
-  // Mutação para Atualizar e Deletar (mantidas como antes)
   const updateMutation = useMutation({
     mutationFn: updateTaskInDB,
     onSuccess: (updatedTask) => {
@@ -240,16 +228,12 @@ export function useTaskStore() {
     },
   });
 
-  // Efeito para gerar tarefas recorrentes na inicialização
   useEffect(() => {
-    // Garante que o usuário esteja logado e que as tarefas tenham sido carregadas
     if (!isLoadingTasks && tasks.length > 0 && currentUserId) {
       generateRecurrentTasks(templates, tasks, addMutation.mutate, currentUserId);
     }
   }, [isLoadingTasks, tasks, templates, addMutation.mutate, currentUserId]);
   
-  
-  // --- Lógica de Notificação de Tarefas (Atraso e Lembrete) ---
   
   useEffect(() => {
     if (isLoadingTasks) return;
@@ -260,7 +244,6 @@ export function useTaskStore() {
     const checkNotifications = () => {
         tasks.filter(t => t.status === 'Pendente').forEach(task => {
             
-            // 1. Notificação de Atraso (Apenas 1x por dia de atraso)
             if (isTaskOverdue(task.dueDate)) {
                 const overdueNotificationKey = `task-overdue-${task.id}-${todayStr}`;
                 
@@ -270,7 +253,6 @@ export function useTaskStore() {
                 }
             }
             
-            // 2. Notificação de Lembrete (30 minutos antes, apenas 1x por tarefa)
             const timeDifference = differenceInMinutes(task.dueDate, now);
             const hasTime = task.dueDate.getHours() !== 23 || task.dueDate.getMinutes() !== 59;
             
@@ -296,7 +278,6 @@ export function useTaskStore() {
   }, [tasks, isLoadingTasks, notifyTaskAction]);
 
 
-  // Função de Conclusão (usa a mutação de atualização)
   const completeTask = useCallback((id: string) => {
     const taskToComplete = tasks.find(t => t.id === id);
     if (taskToComplete) {
@@ -308,9 +289,7 @@ export function useTaskStore() {
     }
   }, [tasks, updateMutation]);
 
-  // Função de Adição (usa a mutação de adição)
   const addTask = (newTask: Omit<Task, 'id' | 'status' | 'completedAt' | 'user_id'>, options?: any) => {
-    // Garante que o assigneeId seja o usuário logado se não for fornecido
     const taskWithAssignee = {
         ...newTask,
         user_id: user?.id,
@@ -319,15 +298,12 @@ export function useTaskStore() {
     addMutation.mutate(taskWithAssignee, options);
   };
   
-  // Função de Atualização (usa a mutação de atualização)
   const updateTask = updateMutation.mutate;
 
-  // Função de Exclusão (usa a mutação de exclusão)
   const deleteTask = deleteMutation.mutate;
 
 
-  // --- Lógica de Filtragem (useMemo) ---
-
+  // OTIMIZAÇÃO: Centralizar a filtragem e ordenação em um único useMemo
   const filteredTasks = useMemo(() => {
     
     const nonHabitTasks = tasks.filter(t => t.category !== 'Hábito');
@@ -335,6 +311,7 @@ export function useTaskStore() {
     const allPending = nonHabitTasks.filter(t => t.status === 'Pendente');
     const completed = nonHabitTasks.filter(t => t.status === 'Concluída');
     
+    // Função de ordenação otimizada
     const sortTasks = (taskList: Task[]) => {
       return [...taskList].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
     };
@@ -342,30 +319,28 @@ export function useTaskStore() {
     const overdue = sortTasks(allPending.filter(t => isTaskOverdue(t.dueDate)));
     const nonOverduePending = allPending.filter(t => !isTaskOverdue(t.dueDate));
 
-    const todayHigh = sortTasks(nonOverduePending.filter(t => 
-      isToday(t.dueDate) && t.priority === 'Alta' && t.category === 'Geral'
-    ));
+    // Filtros de categoria e prioridade
+    const filterBy = (isTodayCheck: boolean, priority: TaskPriority | null, category: TaskCategory) => {
+        return sortTasks(nonOverduePending.filter(t => {
+            const isCorrectDay = isTodayCheck ? isToday(t.dueDate) : true;
+            const isCorrectPriority = priority ? t.priority === priority : true;
+            const isCorrectCategory = t.category === category;
+            
+            // Filtro especial para 'Esta Semana - Baixa'
+            if (category === 'Geral' && priority === 'Baixa' && !isTodayCheck) {
+                return isThisWeek(t.dueDate, { weekStartsOn: 1 }) && t.priority === 'Baixa' && !isToday(t.dueDate);
+            }
+            
+            return isCorrectDay && isCorrectPriority && isCorrectCategory;
+        }));
+    };
 
-    const todayMedium = sortTasks(nonOverduePending.filter(t => 
-      isToday(t.dueDate) && t.priority === 'Média' && t.category === 'Geral'
-    ));
-
-    const thisWeekLow = sortTasks(nonOverduePending.filter(t => 
-      !isToday(t.dueDate) && isThisWeek(t.dueDate, { weekStartsOn: 1 }) && t.priority === 'Baixa' && t.category === 'Geral'
-    ));
-
-    const woeTasks = sortTasks(nonOverduePending.filter(t => t.category === 'WOE'));
-    const clientTasks = sortTasks(nonOverduePending.filter(t => t.category === 'Clientes'));
-    const agencyTasks = sortTasks(nonOverduePending.filter(t => t.category === 'Agência'));
-
-    const futureTasks = sortTasks(nonOverduePending.filter(t => 
-        isFuture(t.dueDate) && 
-        t.category === 'Geral' &&
-        (t.priority === 'Alta' || t.priority === 'Média' || t.priority === 'Baixa') &&
-        !isToday(t.dueDate) &&
-        !isThisWeek(t.dueDate, { weekStartsOn: 1 })
-    ));
-
+    const todayHigh = filterBy(true, 'Alta', 'Geral');
+    const todayMedium = filterBy(true, 'Média', 'Geral');
+    const thisWeekLow = filterBy(false, 'Baixa', 'Geral'); // Usa a lógica especial dentro do filterBy
+    const woeTasks = filterBy(false, null, 'WOE');
+    const clientTasks = filterBy(false, null, 'Clientes');
+    const agencyTasks = filterBy(false, null, 'Agência');
 
     return {
       overdue,
@@ -375,7 +350,6 @@ export function useTaskStore() {
       woeTasks,
       clientTasks,
       agencyTasks,
-      futureTasks, 
       completed: sortTasks(completed).reverse(),
     };
   }, [tasks]);

@@ -38,8 +38,6 @@ const HabitBoard: React.FC<HabitBoardProps> = ({ habits, onOpenDetailedForm }) =
         <span>Hábitos de Hoje ({habits.length})</span>
       </h3>
       
-      {/* Não permitimos adição rápida de tarefas comuns aqui, apenas hábitos */}
-      
       <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
         {habits.length === 0 ? (
           <p className="text-sm text-muted-foreground p-4 bg-muted rounded-md text-center">
@@ -100,7 +98,6 @@ const Index = () => {
     setIsDetailedFormOpen(false);
   };
 
-  // Filtra hábitos ativos que são esperados para hoje
   const activeHabitsToday = useMemo(() => {
     return allHabits.filter(h => h.isExpectedToday);
   }, [allHabits]);
@@ -266,7 +263,6 @@ const Index = () => {
       <Separator />
       
       {/* 1. Organização dos Quadros (Grid Responsivo) */}
-      {/* Ajuste: Grid de 1 coluna no mobile, 2 no md, 3 no lg, 4 no xl */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         
         {/* Renderiza os quadros de tarefas normais */}
@@ -306,7 +302,6 @@ const Index = () => {
       <Separator />
       
       {/* 2. Resumo Diário de IA e Métricas (NOVO RODAPÉ) */}
-      {/* Ajuste: Grid de 1 coluna no mobile, 3 no lg */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <DailySummaryCard />
         <ProductivityMetrics />
@@ -316,9 +311,7 @@ const Index = () => {
       {/* 3. Progresso de Clientes e Feedbacks (RODAPÉ) */}
       {userRole === 'admin' && (
         <div className="space-y-6">
-            {/* ClientProgressTable já é responsivo internamente */}
             <ClientProgressTable />
-            {/* RecentFeedbackList: Ocupa a largura total no mobile */}
             <RecentFeedbackList />
         </div>
       )}
@@ -338,7 +331,6 @@ const Index = () => {
           <DialogHeader>
             <DialogTitle>Adicionar Nova Tarefa Detalhada</DialogTitle>
           </DialogHeader>
-          {/* Passando os defaults para o formulário */}
           <TaskForm 
             onCancel={handleCloseDetailedForm} 
             initialCategory={formDefaults.category}

@@ -20,8 +20,6 @@ serve(async (req) => {
       })
     }
     
-    // Formatação da data/hora em São Paulo (simulada, pois Edge Functions usam UTC)
-    // Usaremos a data/hora atual da Edge Function (UTC) e indicaremos que é BRT/BRST.
     const now = new Date();
     const brtTime = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
     const formattedMessage = `${message}\nData/Hora BR: ${brtTime}`;
@@ -36,7 +34,7 @@ serve(async (req) => {
       body: JSON.stringify({
         chat_id: chatId,
         text: formattedMessage,
-        parse_mode: 'Markdown', // Usando Markdown para formatação básica
+        parse_mode: 'Markdown',
       }),
     })
 

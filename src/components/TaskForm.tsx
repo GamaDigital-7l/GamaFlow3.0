@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Post, KanbanColumnId } from '@/types/client';
+import { Task, KanbanColumnId, TaskPriority, TaskCategory } from '@/types/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,11 +12,15 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { showSuccess, showError } from '@/utils/toast';
 import { Plus, X } from 'lucide-react';
+import { useTaskStore } from '@/hooks/use-task-store'; // Importando useTaskStore
 
-interface PostFormProps {
-  post?: Post;
-  onSubmit: (post: Omit<Post, 'id' | 'approvalLink'>) => void;
+interface TaskFormProps {
+  post?: Task; // Renomeado de Post para Task para consistência
+  onSubmit?: (task: Omit<Task, 'id' | 'status' | 'completedAt' | 'user_id'>) => void; // Removido se usar useTaskStore
   onCancel: () => void;
+  // Novos props para defaults
+  initialCategory?: TaskCategory;
+  initialPriority?: TaskPriority;
 }
 
 // Função auxiliar para formatar a hora inicial (HH:mm)
@@ -25,29 +29,20 @@ const getInitialTime = (date?: Date): string => {
     return format(date, 'HH:mm');
 };
 
-export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) => {
+export const TaskForm: React.FC<TaskFormProps> = ({ post, onSubmit, onCancel, initialCategory = 'Geral', initialPriority = 'Média' }) => {
+  const { addTask, isAdding } = useTaskStore();
+  
   const [title, setTitle] = useState(post?.title || '');
   const [description, setDescription] = useState(post?.description || '');
   const [dueDate, setDueDate] = useState<Date | undefined>(post?.dueDate || undefined);
   const [dueTime, setDueTime] = useState(getInitialTime(post?.dueDate));
-  const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
-  const [status, setStatus] = useState<KanbanColumnId>(post?.status || 'Produção');
-  const [subtasks, setSubtasks] = useState<string[]>(post?.subtasks || []);
-  const [newSubtask, setNewSubtask] = useState('');
-
-  const handleAddSubtask = () => {
-    if (newSubtask.trim()) {
-      setSubtasks([...subtasks, newSubtask.trim()]);
-      setNewSubtask('');
-    }
-  };
-
-  const handleRemoveSubtask = (index: number) => {
-    const newSubtasks = [...subtasks];
-    newSubtasks.splice(index, 1);
-    setSubtasks(newSubtasks);
-  };
+  const [priority, setPriority] = useState<TaskPriority>(post?.priority || initialPriority);
+  const [category, setCategory] = useState<TaskCategory>(post?.category || initialCategory);
+  const [clientName, setClientName] = useState(post?.clientName || '');
+  const [isRecurrent, setIsRecurrent] = useState(post?.isRecurrent || false);
   
+  // Removido subtasks e imageUrl, pois este é o formulário de Tarefas, não Posts.
+
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
       // Mantém a hora atual se a data for alterada
@@ -55,12 +50,12 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
       const currentMinutes = dueDate?.getMinutes() || 59;
       
       const newDate = new Date(date);
-      newDate.setHours(currentHours, minutes, 0, 0);
+      newDate.setHours(currentHours, currentMinutes, 0, 0);
       
       setDueDate(newDate);
     } else {
       setDueDate(undefined);
-      setDueTime(''); // Limpa a hora se não houver data
+      setDueTime(''); // Limpa a hora se a data for removida
     }
   };
   
@@ -81,35 +76,41 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
     e.preventDefault();
 
     if (!title.trim()) {
-      showError('O título do post não pode estar vazio.');
+      showError('O título da tarefa não pode estar vazio.');
       return;
     }
     
-    // Data de vencimento agora é opcional. Se não houver data, usamos uma data futura padrão (ex: 1 ano)
     let finalDueDate = dueDate;
     if (!finalDueDate) {
-        // Se não houver data, define uma data muito futura para fins de ordenação e evitar erros de tipo Date
-        finalDueDate = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+        showError('A data de vencimento é obrigatória.');
+        return;
     } else if (dueTime) {
         const [hours, minutes] = dueTime.split(':').map(Number);
         finalDueDate = new Date(dueDate);
         finalDueDate.setHours(hours, minutes, 0, 0);
     } else {
-        // Se a hora não for definida, define para o final do dia
         finalDueDate = new Date(dueDate);
         finalDueDate.setHours(23, 59, 59, 999);
     }
 
-    const newPost = {
+    const newTask: Omit<Task, 'id' | 'status' | 'completedAt' | 'user_id'> = {
       title: title.trim(),
       description: description.trim(),
       dueDate: finalDueDate,
-      imageUrl: imageUrl.trim(),
-      status: status,
-      subtasks: subtasks,
+      priority: priority,
+      category: category,
+      isRecurrent: isRecurrent,
+      clientName: clientName.trim() || undefined,
     };
 
-    onSubmit(newPost as Omit<Post, 'id' | 'approvalLink'>);
+    // Se onSubmit for fornecido (para uso externo), chame-o. Caso contrário, use o hook.
+    if (onSubmit) {
+        onSubmit(newTask);
+    } else {
+        addTask(newTask, {
+            onSuccess: () => onCancel(),
+        });
+    }
   };
 
   return (
@@ -120,23 +121,25 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Título do post"
+          placeholder="Título da tarefa"
+          disabled={isAdding}
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="description">Descrição (Legenda)</Label>
+        <Label htmlFor="description">Descrição</Label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Descrição/Legenda do post"
+          placeholder="Descrição da tarefa"
+          disabled={isAdding}
         />
       </div>
       
       <div className="grid grid-cols-3 gap-4">
         {/* Seleção de Data */}
         <div className="grid gap-2 col-span-2">
-          <Label>Data de Vencimento (Opcional)</Label>
+          <Label>Data de Vencimento</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -145,6 +148,7 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
                   "w-full justify-start text-left font-normal",
                   !dueDate && "text-muted-foreground"
                 )}
+                disabled={isAdding}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {dueDate ? format(dueDate, "dd/MM/yyyy") : "Selecione a data"}
@@ -167,87 +171,74 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
           <Input
             id="dueTime"
             type="time"
-            value={dueDate ? dueTime : ''} // Limpa a hora se não houver data
+            value={dueDate ? dueTime : ''} 
             onChange={handleTimeChange}
             placeholder="HH:mm"
-            disabled={!dueDate}
+            disabled={isAdding || !dueDate}
           />
         </div>
       </div>
       
       <div className="grid gap-2">
-        <Label htmlFor="imageUrl">URL da Imagem (Capa 1080x1350)</Label>
-        <div className="flex space-x-2">
-            <Input id="imageUrl" placeholder="URL da imagem" value={imageUrl} onChange={handleChange} />
-            <Button variant="outline" size="icon" disabled>
-                <Upload className="h-4 w-4" />
-            </Button>
+        <Label htmlFor="clientName">Cliente Associado (Opcional)</Label>
+        <Input
+          id="clientName"
+          value={clientName}
+          onChange={(e) => setClientName(e.target.value)}
+          placeholder="Nome do Cliente"
+          disabled={isAdding}
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="priority">Prioridade</Label>
+          <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)} disabled={isAdding}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a prioridade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Alta">Alta</SelectItem>
+              <SelectItem value="Média">Média</SelectItem>
+              <SelectItem value="Baixa">Baixa</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="category">Categoria</Label>
+          <Select value={category} onValueChange={(value) => setCategory(value as TaskCategory)} disabled={isAdding}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Geral">Geral</SelectItem>
+              <SelectItem value="WOE">WOE</SelectItem>
+              <SelectItem value="Clientes">Clientes</SelectItem>
+              <SelectItem value="Agência">Agência</SelectItem>
+              <SelectItem value="Hábito">Hábito</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="status">Status Inicial</Label>
-        <Select value={status} onValueChange={(value) => setStatus(value as KanbanColumnId)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Produção">Produção</SelectItem>
-            <SelectItem value="Aprovação">Aprovação</SelectItem>
-            <SelectItem value="Edição">Edição</SelectItem>
-            <SelectItem value="Aprovado">Aprovado</SelectItem>
-            <SelectItem value="Publicado">Publicado</SelectItem>
-          </SelectContent>
-        </Select>
+      
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="isRecurrent"
+          checked={isRecurrent}
+          onChange={(e) => setIsRecurrent(e.target.checked)}
+          className="h-4 w-4 text-dyad-500 border-gray-300 rounded focus:ring-dyad-500"
+          disabled={isAdding}
+        />
+        <Label htmlFor="isRecurrent">Recorrente (Apenas para referência)</Label>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="subtasks">Subtarefas</Label>
-        {subtasks.map((subtask, index) => (
-          <div key={index} className="flex items-center space-x-2 mb-1">
-            <Input
-              type="text"
-              value={subtask}
-              readOnly
-              className="bg-muted/50"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => handleRemoveSubtask(index)}
-            >
-              <X className="h-4 w-4 text-red-500" />
-            </Button>
-          </div>
-        ))}
-        <div className="flex space-x-2">
-          <Input
-            type="text"
-            value={newSubtask}
-            onChange={(e) => setNewSubtask(e.target.value)}
-            placeholder="Nova subtarefa"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddSubtask();
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleAddSubtask}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      
       <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={onCancel}>
+        <Button variant="ghost" onClick={onCancel} disabled={isAdding}>
           Cancelar
         </Button>
-        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600">
-          Salvar
+        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isAdding}>
+          {isAdding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Salvar Tarefa'}
         </Button>
       </div>
     </form>
