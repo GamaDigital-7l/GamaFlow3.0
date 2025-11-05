@@ -32,7 +32,13 @@ import BriefingTemplatesPage from "./pages/BriefingTemplatesPage";
 import ProposalsPage from "./pages/ProposalsPage";
 import PublicProposalPage from "./pages/PublicProposalPage";
 import NotesPage from "./pages/NotesPage";
-import OnboardingPage from "./pages/OnboardingPage"; // Importando OnboardingPage
+import OnboardingPage from "./pages/OnboardingPage";
+import { LibraryLayout } from "./components/library/LibraryLayout";
+import LibraryHome from "./pages/library/LibraryHome";
+import MyBooksPage from "./pages/library/MyBooksPage";
+import CollectionsPage from "./pages/library/CollectionsPage"; // Importando
+import CategoriesPage from "./pages/library/CategoriesPage"; // Importando
+import StatsPage from "./pages/library/StatsPage"; // Importando
 
 const queryClient = new QueryClient();
 
@@ -41,7 +47,7 @@ const AdminReports = withRole(Reports, "admin");
 const AdminUserManagement = withRole(UserManagementPage, "admin");
 const AdminClients = withRole(Clients, "admin");
 const AdminTasksConfig = withRole(TasksConfigPage, "admin");
-const AdminDashboard = withRole(Index, ["admin", "user"]); // Dashboard agora é para admin/user
+const AdminDashboard = withRole(Index, ["admin", "user"]);
 const AdminAppSettings = withRole(AppSettingsPage, "admin");
 const AdminClientFeedback = withRole(ClientFeedbackPage, "admin");
 const AuthenticatedGoals = withRole(GoalsPage, ["admin", "user"]);
@@ -51,6 +57,14 @@ const AdminBriefings = withRole(BriefingsPage, "admin");
 const AdminBriefingTemplates = withRole(BriefingTemplatesPage, "admin");
 const AdminProposals = withRole(ProposalsPage, "admin");
 const AuthenticatedNotes = withRole(NotesPage, ["admin", "user"]);
+
+// Componentes da Biblioteca (Acesso para Admin/User)
+const AuthenticatedLibraryHome = withRole(LibraryHome, ["admin", "user"]);
+const AuthenticatedMyBooks = withRole(MyBooksPage, ["admin", "user"]);
+const AuthenticatedCollections = withRole(CollectionsPage, ["admin", "user"]);
+const AuthenticatedCategories = withRole(CategoriesPage, ["admin", "user"]);
+const AuthenticatedStats = withRole(StatsPage, ["admin", "user"]);
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -67,7 +81,7 @@ const App = () => (
               <Route path="/approval/confirmation" element={<ApprovalConfirmationPage />} />
               <Route path="/briefing/public/:formId" element={<PublicBriefingPage />} />
               <Route path="/proposal/public/:publicId" element={<PublicProposalPage />} />
-              <Route path="/onboarding/:clientId" element={<OnboardingPage />} /> {/* NOVA ROTA PÚBLICA */}
+              <Route path="/onboarding/:clientId" element={<OnboardingPage />} />
               <Route path="/login" element={<Login />} />
               
               {/* Rota Dedicada ao Playbook do Cliente (Protegida por Sessão) */}
@@ -90,7 +104,6 @@ const App = () => (
                 }
               >
                 {/* Rotas Filhas (Renderizadas via Outlet no AppShell) */}
-                {/* O Dashboard agora usa withRole para proteger contra clientes */}
                 <Route index element={<AdminDashboard />} /> 
                 <Route path="tasks" element={<AdminTasksConfig />} />
                 <Route path="goals" element={<AuthenticatedGoals />} />
@@ -98,7 +111,6 @@ const App = () => (
                 <Route path="crm" element={<AdminCrm />} /> 
                 <Route path="proposals" element={<AdminProposals />} />
                 
-                {/* Rota de Briefings (Contém a rota de templates aninhada) */}
                 <Route path="briefings">
                     <Route index element={<AdminBriefings />} />
                     <Route path="templates" element={<AdminBriefingTemplates />} />
@@ -107,7 +119,6 @@ const App = () => (
                 <Route path="financeiro" element={<AdminFinanceiro />} />
                 <Route path="notes" element={<AuthenticatedNotes />} />
                 
-                {/* ClientWorkspacePage agora é APENAS para Admin (Kanban/Config Onboarding) */}
                 <Route path="clients/:clientId/*" element={<ClientWorkspacePage />} /> 
                 
                 <Route path="reports" element={<AdminReports />} />
@@ -118,6 +129,24 @@ const App = () => (
                 
                 {/* 404 dentro do AppShell */}
                 <Route path="*" element={<NotFound />} />
+              </Route>
+              
+              {/* NOVO: Rotas da Biblioteca Digital (Layout Próprio) */}
+              <Route 
+                path="/library" 
+                element={
+                  <ProtectedRoute>
+                    <LibraryLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<AuthenticatedLibraryHome />} />
+                <Route path="my-books" element={<AuthenticatedMyBooks />} />
+                <Route path="collections" element={<AuthenticatedCollections />} />
+                <Route path="categories" element={<AuthenticatedCategories />} />
+                <Route path="stats" element={<AuthenticatedStats />} />
+                {/* Rota do Leitor (A ser implementada) */}
+                <Route path="reader/:bookId" element={<div>Leitor Avançado</div>} /> 
               </Route>
               
               {/* Rota de fallback para 404 */}
