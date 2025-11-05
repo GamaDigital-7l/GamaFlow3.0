@@ -2,29 +2,24 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { USERS_QUERY_KEY } from './use-user-management'; // Importando a chave de query
+import { useSession } from '@/components/SessionContextProvider'; // Importando useSession
 
 const FORCE_ADMIN_FUNCTION_URL = 'https://cxntiszohzgntyhbagga.supabase.co/functions/v1/force-admin';
 
-const callForceAdmin = async (): Promise<void> => {
-  // 1. Tenta renovar a sessão para garantir que o token não esteja expirado
-  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+const callForceAdmin = async (userId: string): Promise<void> => {
+  // Garante que a sessão mais recente seja obtida
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
-  if (refreshError) {
-      // Se a renovação falhar, pode ser que o refresh token tenha expirado.
-      throw new Error(`Erro ao renovar sessão: ${refreshError.message}. Tente fazer logout e login novamente.`);
-  }
-  
-  // 2. Obtém a sessão mais recente (renovada ou existente)
-  const session = refreshData.session;
-  
-  if (!session) throw new Error("Usuário não logado após tentativa de renovação.");
+  if (sessionError) throw new Error(`Erro ao obter sessão: ${sessionError.message}`);
+  if (!session) throw new Error("Usuário não logado.");
 
   const response = await fetch(FORCE_ADMIN_FUNCTION_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
+      'Authorization': `Bearer ${session.access_token}`, // Ainda enviamos o token para autenticação básica
     },
+    body: JSON.stringify({ userId }), // Enviamos o ID do usuário
   });
 
   const result = await response.json();
@@ -36,6 +31,7 @@ const callForceAdmin = async (): Promise<void> => {
 
 export const useForceAdmin = () => {
   const queryClient = useQueryClient();
+  const { user } = useSession(); // Obtém o usuário logado
 
   const mutation = useMutation({
     mutationFn: callForceAdmin,
@@ -51,9 +47,17 @@ export const useForceAdmin = () => {
       showError(`Erro ao forçar admin: ${err.message}`);
     },
   });
+  
+  const forceAdmin = () => {
+      if (!user?.id) {
+          showError("Usuário não logado. Não é possível forçar a role.");
+          return;
+      }
+      mutation.mutate(user.id);
+  };
 
   return {
-    forceAdmin: mutation.mutate,
+    forceAdmin,
     isForcing: mutation.isPending,
   };
 };

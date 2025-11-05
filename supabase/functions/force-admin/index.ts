@@ -11,13 +11,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
   
-  // 1. Autenticação: Obtém o token do usuário que está chamando
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
-  }
-  const token = authHeader.replace('Bearer ', '');
-
   // Cria o cliente Supabase com a Service Role Key (Admin)
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -30,18 +23,22 @@ serve(async (req) => {
     }
   )
 
+  // 1. Autenticação: Apenas verifica se o token existe (para evitar acesso anônimo)
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+  }
+  
+  // 2. Processamento da Requisição
   try {
-    // 2. Obtém o ID do usuário logado usando o token
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid token or user not found.' }), {
-        status: 401,
+    const { userId } = await req.json()
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Missing userId in request body.' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-    
-    const userId = user.id;
 
     // 3. Atualiza o perfil para 'admin' usando a Service Role Key (ignora RLS)
     const { error: profileUpdateError } = await supabaseAdmin

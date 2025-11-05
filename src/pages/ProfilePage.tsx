@@ -16,6 +16,7 @@ const ProfilePage: React.FC = () => {
   
   const handleForceAdmin = () => {
     if (window.confirm("ATENÇÃO: Isso forçará sua role para 'admin' usando a Service Role Key. Use apenas em caso de emergência de acesso.")) {
+        // A função forceAdmin agora obtém o ID do usuário internamente
         forceAdmin();
     }
   };
