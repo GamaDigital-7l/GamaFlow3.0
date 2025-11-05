@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
 
 interface TelegramConfig {
   botToken: string;
@@ -75,9 +76,14 @@ const fetchSettings = async (): Promise<AppSettings> => {
     .eq('id', GLOBAL_SETTINGS_ID)
     .single();
 
-  if (error && error.code !== 'PGRST116') {
-    // Se for um erro diferente de "No rows found", lança o erro
-    throw new Error(error.message);
+  if (error) {
+    const postgrestError = error as PostgrestError;
+    // PGRST116 = No rows found (404)
+    // 406 = Not Acceptable (RLS denial for single row)
+    if (postgrestError.code !== 'PGRST116' && postgrestError.status !== 406) {
+      // Se for um erro diferente de "No rows found" ou RLS denial, lança o erro
+      throw new Error(error.message);
+    }
   }
   
   // Se não houver dados ou se a coluna 'settings' for nula, retorna o padrão
