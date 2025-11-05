@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLibrary } from '@/hooks/use-library';
 import { Loader2 } from 'lucide-react';
+import { PdfReader } from '@/components/library/PdfReader';
+import { EpubReader } from '@/components/library/EpubReader';
 
 const ReaderPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -42,7 +44,10 @@ const ReaderPage: React.FC = () => {
         <CardContent className="space-y-6">
           {/* Área para o leitor (PDF/EPUB) */}
           <div className="h-[600px] border rounded-lg bg-muted flex items-center justify-center">
-            <p className="text-muted-foreground">Leitor aqui (PDF/EPUB)</p>
+            {book.file_type === 'pdf' && <PdfReader fileUrl={book.file_url} />}
+            {book.file_type === 'epub' && <EpubReader fileUrl={book.file_url} />}
+            {book.file_type === 'mobi' && <p className="text-muted-foreground">Leitor MOBI não implementado.</p>}
+            {(!book.file_type) && <p className="text-muted-foreground">Tipo de arquivo não suportado.</p>}
           </div>
           
           {/* Controles de Leitura (A implementar) */}
