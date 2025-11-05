@@ -12,9 +12,10 @@ import { Annotation } from '@/components/library/Annotation';
 
 const ReaderPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
-  const { getBookById, getProgressByBookId, upsertProgress, isLoading } = useLibrary();
+  const { getBookById, getProgressByBookId, upsertProgress, getHighlightsByBookId, upsertHighlight, isLoading } = useLibrary();
   const book = getBookById(bookId || '');
   const initialProgress = getProgressByBookId(bookId || '');
+  const highlights = getHighlightsByBookId(bookId || '');
   
   const [settings, setSettings] = useState({
     theme: 'light',
@@ -28,6 +29,7 @@ const ReaderPage: React.FC = () => {
   
   const [isAnnotationOpen, setIsAnnotationOpen] = useState(false);
   const [highlightedText, setHighlightedText] = useState('');
+  const [isSavingAnnotation, setIsSavingAnnotation] = useState(false);
   
   useEffect(() => {
     if (initialProgress?.settings) {
@@ -59,11 +61,26 @@ const ReaderPage: React.FC = () => {
     }
   };
   
-  const handleSaveAnnotation = (note: string, color: string) => {
-    // Lógica para salvar a anotação (a implementar)
-    console.log(`Anotação salva: ${note} com cor ${color}`);
-    setIsAnnotationOpen(false);
-    setHighlightedText('');
+  const handleSaveAnnotation = async (note: string, color: string) => {
+    if (!bookId) return;
+    
+    setIsSavingAnnotation(true);
+    try {
+      await upsertHighlight({
+        book_id: bookId,
+        page_number: 1, // Simulação
+        text_content: highlightedText,
+        note: note,
+        color: color,
+      });
+      showSuccess('Anotação salva com sucesso!');
+    } catch (error) {
+      showError(`Erro ao salvar anotação: ${error.message}`);
+    } finally {
+      setIsSavingAnnotation(false);
+      setIsAnnotationOpen(false);
+      setHighlightedText('');
+    }
   };
 
   if (isLoading) {
@@ -141,7 +158,7 @@ const ReaderPage: React.FC = () => {
           highlightedText={highlightedText}
           onSave={handleSaveAnnotation}
           onCancel={() => setIsAnnotationOpen(false)}
-          isSaving={false} // Adicione a lógica de salvamento aqui
+          isSaving={isSavingAnnotation}
         />
       )}
     </div>
