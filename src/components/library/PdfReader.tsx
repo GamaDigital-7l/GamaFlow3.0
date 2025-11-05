@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
+import { showError } from '@/utils/toast';
+
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface PdfReaderProps {
@@ -11,9 +13,16 @@ interface PdfReaderProps {
 export const PdfReader: React.FC<PdfReaderProps> = ({ fileUrl }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+    setLoadError(null); // Limpa qualquer erro anterior
+  };
+
+  const onDocumentLoadError = (error: any) => {
+    console.error("Erro ao carregar PDF:", error);
+    setLoadError("Erro ao carregar o PDF. Verifique o arquivo ou tente novamente.");
   };
 
   const goToPrevPage = () => {
@@ -25,10 +34,16 @@ export const PdfReader: React.FC<PdfReaderProps> = ({ fileUrl }) => {
   };
 
   return (
-    <div>
+    <div className="relative">
+      {loadError && (
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/80 text-red-600 z-10">
+          {loadError}
+        </div>
+      )}
       <Document
         file={fileUrl}
         onLoadSuccess={onDocumentLoadSuccess}
+        onLoadError={onDocumentLoadError}
         className="max-w-full"
       >
         <Page pageNumber={pageNumber} width={700} />
@@ -36,7 +51,7 @@ export const PdfReader: React.FC<PdfReaderProps> = ({ fileUrl }) => {
       <div className="flex justify-center items-center mt-4">
         <button
           type="button"
-          disabled={pageNumber <= 1}
+          disabled={pageNumber <= 1 || loadError}
           onClick={goToPrevPage}
           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md disabled:opacity-50"
         >
@@ -47,7 +62,7 @@ export const PdfReader: React.FC<PdfReaderProps> = ({ fileUrl }) => {
         </p>
         <button
           type="button"
-          disabled={pageNumber >= (numPages || 0)}
+          disabled={pageNumber >= (numPages || 0) || loadError}
           onClick={goToNextPage}
           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md disabled:opacity-50"
         >
