@@ -6,11 +6,18 @@ import { USERS_QUERY_KEY } from './use-user-management'; // Importando a chave d
 const FORCE_ADMIN_FUNCTION_URL = 'https://cxntiszohzgntyhbagga.supabase.co/functions/v1/force-admin';
 
 const callForceAdmin = async (): Promise<void> => {
-  // Garante que a sessão mais recente seja obtida
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  // 1. Tenta renovar a sessão para garantir que o token não esteja expirado
+  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
   
-  if (sessionError) throw new Error(`Erro ao obter sessão: ${sessionError.message}`);
-  if (!session) throw new Error("Usuário não logado.");
+  if (refreshError) {
+      // Se a renovação falhar, pode ser que o refresh token tenha expirado.
+      throw new Error(`Erro ao renovar sessão: ${refreshError.message}. Tente fazer logout e login novamente.`);
+  }
+  
+  // 2. Obtém a sessão mais recente (renovada ou existente)
+  const session = refreshData.session;
+  
+  if (!session) throw new Error("Usuário não logado após tentativa de renovação.");
 
   const response = await fetch(FORCE_ADMIN_FUNCTION_URL, {
     method: 'POST',
