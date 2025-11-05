@@ -1,15 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLibrary } from '@/hooks/use-library';
 import { Loader2 } from 'lucide-react';
 import { PdfReader } from '@/components/library/PdfReader';
 import { EpubReader } from '@/components/library/EpubReader';
+import { Button } from '@/components/ui/button';
+import { ReadingSettings } from '@/components/library/ReadingSettings';
+import { cn } from '@/lib/utils';
 
 const ReaderPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
-  const { getBookById, isLoading } = useLibrary();
+  const { getBookById, getProgressByBookId, upsertProgress, isLoading } = useLibrary();
   const book = getBookById(bookId || '');
+  const initialProgress = getProgressByBookId(bookId || '');
+  
+  const [settings, setSettings] = useState({
+    theme: 'light',
+    fontSize: 16,
+    fontFamily: 'serif',
+    lineSpacing: 1.5,
+    margins: 20,
+    scrollMode: 'page',
+    autoNightMode: false,
+  });
+  
+  useEffect(() => {
+    if (initialProgress?.settings) {
+      setSettings(initialProgress.settings);
+    }
+  }, [initialProgress]);
+  
+  const handleSettingsChange = (newSettings: any) => {
+    setSettings(newSettings);
+    
+    // Salva as configurações no banco de dados
+    upsertProgress({
+        book_id: bookId,
+        current_page: 0,
+        reading_status: 'Lendo',
+        total_pages: book?.page_count || 0,
+        settings: newSettings,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -42,8 +75,20 @@ const ReaderPage: React.FC = () => {
           <p className="text-xl text-muted-foreground">Por {book.author}</p>
         </CardHeader>
         <CardContent className="space-y-6">
+          
           {/* Área para o leitor (PDF/EPUB) */}
-          <div className="h-[600px] border rounded-lg bg-muted flex items-center justify-center">
+          <div className={cn(
+            "h-[600px] border rounded-lg flex items-center justify-center",
+            settings.theme === 'light' && 'bg-white text-gray-800',
+            settings.theme === 'dark' && 'bg-gray-800 text-gray-100',
+            settings.theme === 'sepia' && 'bg-yellow-100 text-gray-700',
+            settings.theme === 'high-contrast' && 'bg-black text-yellow-400',
+          )} style={{
+            fontSize: `${settings.fontSize}px`,
+            fontFamily: settings.fontFamily,
+            lineHeight: `${settings.lineSpacing}`,
+            padding: `${settings.margins}px`,
+          }}>
             {book.file_type === 'pdf' && <PdfReader fileUrl={book.file_url} />}
             {book.file_type === 'epub' && <EpubReader fileUrl={book.file_url} />}
             {book.file_type === 'mobi' && <p className="text-muted-foreground">Leitor MOBI não implementado.</p>}
@@ -55,6 +100,13 @@ const ReaderPage: React.FC = () => {
             <Button variant="outline">Anterior</Button>
             <Button variant="outline">Próximo</Button>
           </div>
+        </CardContent>
+      </Card>
+      
+      {/* Configurações de Leitura */}
+      <Card className="w-full max-w-md mt-8">
+        <CardContent>
+          <ReadingSettings settings={settings} onSettingsChange={handleSettingsChange} />
         </CardContent>
       </Card>
     </div>
