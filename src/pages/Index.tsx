@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { TaskBoard } from "@/components/TaskBoard";
 import { useTaskStore } from "@/hooks/use-task-store";
 import { useHabits } from "@/hooks/use-habits";
@@ -25,9 +23,7 @@ import { RecentFeedbackList } from "@/components/RecentFeedbackList";
 import { ClientProgressTable } from "@/components/ClientProgressTable";
 import { GoalProgressSummary } from "@/components/goals/GoalProgressSummary";
 import { DailySummaryCard } from "@/components/DailySummaryCard";
-import { HabitBoard } from "@/components/HabitBoard";
-import ContentBuilder from "@/components/ContentBuilder";
-import { Block } from "@/types/builder";
+import { HabitBoard } from "@/components/HabitBoard"; // Importando HabitBoard
 
 const Index = () => {
   const { 
@@ -44,7 +40,7 @@ const Index = () => {
     isLoading: isLoadingTasks,
   } = useTaskStore();
   
-  const { habits: allHabits, isLoading: isLoadingHabits } = useHabits();
+  const { habits: allHabits, isLoading: isLoadingHabits, habitAlerts } = useHabits();
   const { userRole } = useSession();
 
   const isMobile = useIsMobile();
@@ -73,11 +69,11 @@ const Index = () => {
     setIsDetailedFormOpen(false);
   };
 
-  const activeHabitsToday = React.useMemo(() => {
+  const activeHabitsToday = useMemo(() => {
     return allHabits.filter(h => h.isExpectedToday);
   }, [allHabits]);
 
-  const taskBoards = React.useMemo(() => [
+  const taskBoards = useMemo(() => [
     { 
       title: "Hoje — Prioridade Alta", 
       tasks: todayHigh, 
@@ -193,21 +189,41 @@ const Index = () => {
       </Card>
     ) : null
   );
-  
-  const [contentBlocks, setContentBlocks] = useState<Block[]>([
-    { id: 'initial-text', type: 'text', data: { text: 'Welcome to the Dyad App!' } },
-    { id: 'initial-title', type: 'title', data: { title: 'My Awesome Page' } },
-  ]);
 
-  const handleContentChange = (newBlocks: Block[]) => {
-    setContentBlocks(newBlocks);
-  };
+  if (isLoadingTasks || isLoadingHabits) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />
+        <p className="mt-2 text-muted-foreground">Carregando dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard de Tarefas</h1>
-      
-      <ContentBuilder initialBlocks={contentBlocks} onChange={handleContentChange} />
+      {/* Alerta de Quebra de Hábito no Topo */}
+      {habitAlerts.length > 0 && (
+        <Alert className="bg-red-50 border-red-500/50 text-red-800 dark:bg-red-950 dark:border-red-700 dark:text-red-200 p-4 shadow-lg">
+          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+          <AlertTitle className="font-bold text-lg">Alerta de Hábito Quebrado!</AlertTitle>
+          <AlertDescription className="mt-2 space-y-1">
+            {habitAlerts.map((alert, index) => (
+              <p key={index} className="text-sm">{alert.message}</p>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Título e Botão de Adição Detalhada Global */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard de Tarefas</h1>
+        <Button 
+          onClick={() => handleOpenDetailedForm()}
+          className="bg-dyad-500 hover:bg-dyad-600"
+        >
+          <ListPlus className="h-4 w-4 mr-2" /> Adicionar Tarefa
+        </Button>
+      </div>
 
       {/* Mobile: Atrasadas vêm primeiro */}
       {isMobile && OverdueSection}
