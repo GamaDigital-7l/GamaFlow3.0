@@ -8,6 +8,7 @@ import { EpubReader } from '@/components/library/EpubReader';
 import { Button } from '@/components/ui/button';
 import { ReadingSettings } from '@/components/library/ReadingSettings';
 import { cn } from '@/lib/utils';
+import { Annotation } from '@/components/library/Annotation';
 
 const ReaderPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -24,6 +25,9 @@ const ReaderPage: React.FC = () => {
     scrollMode: 'page',
     autoNightMode: false,
   });
+  
+  const [isAnnotationOpen, setIsAnnotationOpen] = useState(false);
+  const [highlightedText, setHighlightedText] = useState('');
   
   useEffect(() => {
     if (initialProgress?.settings) {
@@ -42,6 +46,24 @@ const ReaderPage: React.FC = () => {
         total_pages: book?.page_count || 0,
         settings: newSettings,
     });
+  };
+  
+  const handleTextSelect = () => {
+    const selection = window.getSelection();
+    if (selection) {
+      const text = selection.toString().trim();
+      if (text) {
+        setHighlightedText(text);
+        setIsAnnotationOpen(true);
+      }
+    }
+  };
+  
+  const handleSaveAnnotation = (note: string, color: string) => {
+    // Lógica para salvar a anotação (a implementar)
+    console.log(`Anotação salva: ${note} com cor ${color}`);
+    setIsAnnotationOpen(false);
+    setHighlightedText('');
   };
 
   if (isLoading) {
@@ -77,13 +99,16 @@ const ReaderPage: React.FC = () => {
         <CardContent className="space-y-6">
           
           {/* Área para o leitor (PDF/EPUB) */}
-          <div className={cn(
-            "h-[600px] border rounded-lg flex items-center justify-center",
-            settings.theme === 'light' && 'bg-white text-gray-800',
-            settings.theme === 'dark' && 'bg-gray-800 text-gray-100',
-            settings.theme === 'sepia' && 'bg-yellow-100 text-gray-700',
-            settings.theme === 'high-contrast' && 'bg-black text-yellow-400',
-          )} style={{
+          <div 
+            className={cn(
+              "h-[600px] border rounded-lg flex items-center justify-center",
+              settings.theme === 'light' && 'bg-white text-gray-800',
+              settings.theme === 'dark' && 'bg-gray-800 text-gray-100',
+              settings.theme === 'sepia' && 'bg-yellow-100 text-gray-700',
+              settings.theme === 'high-contrast' && 'bg-black text-yellow-400',
+            )}
+            onMouseUp={handleTextSelect}
+          style={{
             fontSize: `${settings.fontSize}px`,
             fontFamily: settings.fontFamily,
             lineHeight: `${settings.lineSpacing}`,
@@ -109,6 +134,16 @@ const ReaderPage: React.FC = () => {
           <ReadingSettings settings={settings} onSettingsChange={handleSettingsChange} />
         </CardContent>
       </Card>
+      
+      {/* Componente de Anotação (Condicional) */}
+      {isAnnotationOpen && (
+        <Annotation
+          highlightedText={highlightedText}
+          onSave={handleSaveAnnotation}
+          onCancel={() => setIsAnnotationOpen(false)}
+          isSaving={false} // Adicione a lógica de salvamento aqui
+        />
+      )}
     </div>
   );
 };
