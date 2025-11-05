@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, BookOpen, Target, Star, Folder, Plus } from 'lucide-react';
+import { Loader2, BookOpen, Folder, Plus } from 'lucide-react';
 import { useLibrary } from '@/hooks/use-library';
 import { BookCard } from '@/components/library/BookCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -47,7 +47,7 @@ const BookCarousel: React.FC<BookCarouselProps> = ({ title, books, linkTo }) => 
 const LibraryHome: React.FC = () => {
   const { library, continueReading, popularBooks, isLoading } = useLibrary();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  
+
   // Simulação de Categorias (usando tags únicas)
   const categories = useMemo(() => {
     const allCategories = Array.from(new Set(library.map(b => b.category).filter(c => c)));
@@ -95,8 +95,6 @@ const LibraryHome: React.FC = () => {
         books={popularBooks} 
         linkTo="/library/categories"
       />
-      
-      <Separator />
       
       {/* 3. Carrosséis por Categoria (Estilo Netflix) */}
       {booksByCategory.map(({ category, books }) => (
