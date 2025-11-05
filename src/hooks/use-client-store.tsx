@@ -11,7 +11,7 @@ import { useWhatsappNotifications } from './use-whatsapp-notifications';
 import { PostgrestError } from '@supabase/supabase-js';
 
 const CLIENTS_QUERY_KEY = 'allClients';
-const DELETE_CLIENT_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/delete-client-data';
+const DELETE_CLIENT_FUNCTION_URL = 'https://cxntiszohzgntyhbagga.supabase.co/functions/v1/delete-client-data';
 
 const columnOrder: KanbanColumnId[] = [
   'Produção',

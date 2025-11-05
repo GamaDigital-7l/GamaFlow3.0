@@ -171,7 +171,7 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({ initialData, onSubmi
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error("Usuário não autenticado.");
 
-        const response = await fetch('https://pynxuncunsicifxvloms.supabase.co/functions/v1/ai-summary-proxy', {
+        const response = await fetch('https://cxntiszohzgntyhbagga.supabase.co/functions/v1/ai-summary-proxy', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -465,7 +465,7 @@ export const ProposalForm: React.FC<ProposalFormProps> = ({ initialData, onSubmi
                 type="button" 
                 variant="outline" 
                 size="sm" 
-                onClick={() => handleAddSection(opt.type)}
+                onClick={() => handleAddSection(opt.value)}
                 disabled={isSubmitting}
             >
                 <opt.icon className="h-4 w-4 mr-1" /> {opt.label}

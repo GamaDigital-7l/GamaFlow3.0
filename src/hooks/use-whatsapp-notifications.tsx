@@ -2,7 +2,7 @@ import { useAppSettings } from './use-app-settings';
 import { useCallback } from 'react';
 import { showError } from '@/utils/toast';
 
-const WHATSAPP_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/send-whatsapp-notification';
+const WHATSAPP_FUNCTION_URL = 'https://cxntiszohzgntyhbagga.supabase.co/functions/v1/send-whatsapp-notification';
 
 interface WhatsappConfig {
     apiKey: string;

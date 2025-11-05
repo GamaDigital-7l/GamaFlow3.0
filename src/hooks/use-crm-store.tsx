@@ -10,7 +10,7 @@ import { differenceInDays } from 'date-fns';
 import { useTelegramNotifications } from './use-telegram-notifications'; // Importando o hook de notificação
 
 const LEADS_QUERY_KEY = 'crmLeads';
-const CONVERT_LEAD_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/convert-lead-to-client';
+const CONVERT_LEAD_FUNCTION_URL = 'https://cxntiszohzgntyhbagga.supabase.co/functions/v1/convert-lead-to-client';
 
 const CRM_COLUMN_ORDER: LeadStatus[] = [
   'Prospectando',
