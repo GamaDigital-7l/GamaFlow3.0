@@ -90,7 +90,7 @@ serve(async (req) => {
     }
     
     // Nota: A exclusão do cliente do DB é feita no frontend (use-client-store) após esta função,
-    -- pois a exclusão dos usuários Auth deve acionar o CASCADE na tabela profiles.
+    // pois a exclusão dos usuários Auth deve acionar o CASCADE na tabela profiles.
 
     return new Response(JSON.stringify({ message: `Client users deleted successfully. Total users deleted: ${userIdsToDelete.length}` }), {
       status: 200,
