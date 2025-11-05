@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction, Subscription, TransactionType, RecurrenceFrequency } from '@/types/finance';
+import { Transaction, Subscription, TransactionType, RecurrenceFrequency, Card } from '@/types/finance';
 import { showSuccess, showError } from '@/utils/toast';
 import { useMemo, useCallback } from 'react';
-import { format, parseISO, isSameMonth, isSameYear, getDay, addMonths, addWeeks, addYears, isPast } from 'date-fns';
+import { format, parseISO, isSameMonth, isSameYear, getDay, addMonths, addWeeks, addYears, isPast, isSameDay } from 'date-fns'; // Added isSameDay
 
 const TRANSACTIONS_QUERY_KEY = 'financeTransactions';
 const SUBSCRIPTIONS_QUERY_KEY = 'financeSubscriptions';

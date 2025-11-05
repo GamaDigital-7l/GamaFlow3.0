@@ -32,19 +32,19 @@ const sendFeedback = async (clientId: string, feedback: string, type: 'praise' |
     
     // Registrar interação na tabela client_interactions
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        const { error: interactionError } = await supabase
-            .from('client_interactions')
-            .insert({
-                client_id: clientId,
-                user_id: user.id,
-                interaction_type: 'feedback',
-                content: `Feedback do cliente (${type}): ${feedback}`,
-            });
-        
-        if (interactionError) {
-            console.error("Failed to register client interaction for feedback:", interactionError);
-        }
+    
+    // Registra a interação, usando user.id se logado, ou null se anônimo (como na página pública)
+    const { error: interactionError } = await supabase
+        .from('client_interactions')
+        .insert({
+            client_id: clientId,
+            user_id: user?.id || null, // Permite user_id nulo para interações públicas
+            interaction_type: 'feedback',
+            content: `Feedback do cliente (${type}): ${feedback}`,
+        });
+    
+    if (interactionError) {
+        console.error("Failed to register client interaction for feedback:", interactionError);
     }
 };
 

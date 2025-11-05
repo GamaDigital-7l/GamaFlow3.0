@@ -19,6 +19,11 @@ import {
 } from "@/components/ui/table"
 import { formatDate } from "@/utils/date"; // Importando formatDate
 
+// Helper function for currency formatting
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
 interface CustomTooltipProps {
   active?: boolean;
   payload?: any[];

@@ -23,36 +23,7 @@ import { RecentFeedbackList } from "@/components/RecentFeedbackList";
 import { ClientProgressTable } from "@/components/ClientProgressTable";
 import { GoalProgressSummary } from "@/components/goals/GoalProgressSummary";
 import { DailySummaryCard } from "@/components/DailySummaryCard";
-
-// Novo componente para renderizar o quadro de Hábitos
-interface HabitBoardProps {
-  habits: any[]; // Usamos 'any' pois são Habit & Status
-  onOpenDetailedForm: () => void;
-}
-
-const HabitBoard: React.FC<HabitBoardProps> = ({ habits, onOpenDetailedForm }) => {
-  return (
-    <div className={cn("space-y-3 p-4 bg-card border rounded-lg shadow-sm")}>
-      <h3 className="text-lg font-bold text-foreground/90 border-b pb-2 mb-2 flex items-center space-x-2">
-        <Zap className="h-5 w-5 text-dyad-500" />
-        <span>Hábitos de Hoje ({habits.length})</span>
-      </h3>
-      
-      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-        {habits.length === 0 ? (
-          <p className="text-sm text-muted-foreground p-4 bg-muted rounded-md text-center">
-            Nenhum hábito esperado para hoje.
-          </p>
-        ) : (
-          habits.map(habit => (
-            <HabitPill key={habit.id} habit={habit} />
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
-
+import { HabitBoard } from "@/components/HabitBoard"; // Importando HabitBoard
 
 const Index = () => {
   const { 
@@ -62,7 +33,7 @@ const Index = () => {
     thisWeekLow, 
     woeTasks, 
     clientTasks, 
-    agencyTasks,
+    agencyTasks, 
     completed,
     completeTask,
     updateTask,
