@@ -30,28 +30,11 @@ interface ClientWorkspaceProps {
 
 // Gera uma lista de meses (ex: 6 meses passados, 6 meses futuros)
 const generateMonthOptions = (currentMonthYear: string) => {
-  const options: { value: string; label: string }[] = [
-    { value: 'todayHigh', label: 'Hoje — Prioridade Alta' },
-    { value: 'todayMedium', label: 'Hoje — Prioridade Média' },
-    { value: 'thisWeekLow', label: 'Esta Semana — Baixa' },
-    { value: 'woeTasks', label: 'WOE Comunicação' },
-    { value: 'clientTasks', label: 'Tarefas de Cliente' },
-    { value: 'agencyTasks', label: 'Gama Creative (Agência)' },
-  ];
-  let date = parseISO(currentMonthYear + '-01');
-
-  // 6 meses passados + Mês atual
-  for (let i = 6; i >= 0; i--) {
-    const monthDate = subMonths(date, i);
-    options.push({
-      value: format(monthDate, 'yyyy-MM'),
-      label: format(monthDate, 'MMMM/yyyy', { locale: ptBR }),
-    });
-  }
-
-  // 6 meses futuros
-  for (let i = 1; i <= 6; i++) {
-    const monthDate = addMonths(date, i);
+  const options: { value: string; label: string }[] = [];
+  const today = new Date();
+  
+  for (let i = -6; i <= 6; i++) {
+    const monthDate = subMonths(today, i);
     options.push({
       value: format(monthDate, 'yyyy-MM'),
       label: format(monthDate, 'MMMM/yyyy', { locale: ptBR }),
@@ -63,7 +46,7 @@ const generateMonthOptions = (currentMonthYear: string) => {
   return uniqueOptions.sort((a, b) => a.value.localeCompare(b.value));
 };
 
-export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) => {
+const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) => {
   const { getClientById, getKanbanData, handleDragEnd, updatePost, addPost, deletePost } = useClientStore();
   const client = getClientById(clientId);
   
@@ -145,9 +128,9 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
 
 
   return (
-    <div className="space-y-6 h-full">
+    <div className="h-full space-y-6">
       {/* Header do Cliente: Flex-col no mobile, flex-row no md */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b pb-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b pb-2">
         <div className="flex items-center space-x-4 mb-4 md:mb-0">
           <ClientAvatar 
             name={client.name} 
@@ -158,11 +141,11 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
             <h1 className="text-3xl font-bold">{client.name}</h1>
             <div className="flex items-center space-x-2 mt-1">
               {/* Badge de Status (Neutro) */}
-              <Badge className={cn("text-xs", getStatusBadgeClass(client.status))}>
+              <Badge className={cn("text-white text-xs", getStatusBadgeClass(client.status))}>
                 {client.status}
               </Badge>
               {/* Badge de Tipo (Neutro) */}
-              <Badge variant="secondary" className={cn("text-xs", getTypeBadgeClass(client.type))}>
+              <Badge variant="secondary" className="text-xs">
                 {client.type}
               </Badge>
               {/* Badge de Aprovações Pendentes (Neutro, mas com destaque sutil) */}
