@@ -220,7 +220,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
           Cancelar
         </Button>
         <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isSubmittingForm}>
-          {isSubmittingForm ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Salvar'}
+          {isSubmittingForm ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Salvar'}
         </Button>
       </div>
     </form>
