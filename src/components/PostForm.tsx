@@ -33,7 +33,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
   const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // Novo estado para o arquivo selecionado
   const [status, setStatus] = useState<KanbanColumnId>(post?.status || 'Produção');
-  const { uploadFile, isUploading } = usePlaybookUpload(''); // Usando o hook de upload, clientId vazio aqui
+  const { uploadFile, isUploading } = usePlaybookUpload(''); // Usando o hook de upload
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,7 +73,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         newDate.setHours(hours, minutes, 0, 0);
         setDueDate(newDate);
     } else if (dueDate && !newTime) {
-        // Se o usuário apagar a hora, define para o final do dia (se houver data)
+        // Se o usuário apagar a hora, define para o final do dia
         const newDate = new Date(dueDate);
         newDate.setHours(23, 59, 59, 999);
         setDueDate(newDate);
@@ -127,6 +127,18 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
 
     onSubmit(newPost as Omit<Post, 'id' | 'approvalLink'>);
   };
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    
+    if (id === 'title') {
+      setTitle(value);
+    } else if (id === 'description') {
+      setDescription(value);
+    } else if (id === 'imageUrl') {
+      setImageUrl(value);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
@@ -135,7 +147,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         <Input
           id="title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={handleChange}
           placeholder="Título do post"
         />
       </div>
@@ -144,7 +156,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         <Textarea
           id="description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={handleChange}
           placeholder="Descrição/Legenda do post"
         />
       </div>
@@ -197,7 +209,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
           <Input
             id="imageUrl"
             value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
+            onChange={handleChange}
             placeholder="URL da imagem do post"
             className="flex-grow"
             disabled={isUploading}
@@ -236,7 +248,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         </Select>
       </div>
       <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={onCancel} disabled={isUploading}>
+        <Button variant="ghost" onClick={onCancel}>
           Cancelar
         </Button>
         <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isUploading}>
