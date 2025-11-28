@@ -12,4 +12,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    'import.meta.env.VITE_NEXTCLOUD_UPLOAD_URL': JSON.stringify(process.env.VITE_NEXTCLOUD_UPLOAD_URL),
+  },
 });

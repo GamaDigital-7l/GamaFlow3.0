@@ -14,7 +14,7 @@ export const usePlaybookUpload = (clientId: string) => {
     setIsUploading(true);
     try {
       const filename = `${clientId}/${uuidv4()}-${file.name}`;
-      const uploadUrl = `${process.env.NEXTCLOUD_UPLOAD_URL}/${filename}`;
+      const uploadUrl = `${import.meta.env.VITE_NEXTCLOUD_UPLOAD_URL}/${filename}`;
 
       // 1. Fetch Nextcloud credentials from the API endpoint
       const credentialsResponse = await fetch('/api/nextcloud-upload-credentials', {
