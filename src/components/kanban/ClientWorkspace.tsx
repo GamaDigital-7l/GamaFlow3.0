@@ -23,6 +23,7 @@ import { ClientAvatar } from '../ClientAvatar';
 import { Droppable } from 'react-beautiful-dnd';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { PostCard } from './PostCard';
+import { Badge } from '@/components/ui/badge';
 
 interface ClientWorkspaceProps {
   clientId: string;
