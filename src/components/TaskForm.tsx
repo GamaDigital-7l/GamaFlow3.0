@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { showSuccess, showError } from '@/utils/toast';
-import { Plus, X } from 'lucide-react';
+import { usePlaybookUpload } from '@/hooks/use-playbook-upload'; // Importando o hook de upload
 
 interface PostFormProps {
   post?: Post;
@@ -31,31 +31,30 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
   const [dueDate, setDueDate] = useState<Date | undefined>(post?.dueDate || undefined);
   const [dueTime, setDueTime] = useState(getInitialTime(post?.dueDate));
   const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // Novo estado para o arquivo selecionado
   const [status, setStatus] = useState<KanbanColumnId>(post?.status || 'Produção');
-  const [subtasks, setSubtasks] = useState<string[]>(post?.subtasks || []);
-  const [newSubtask, setNewSubtask] = useState('');
+  const { uploadFile, isUploading } = usePlaybookUpload(''); // Usando o hook de upload
 
-  const handleAddSubtask = () => {
-    if (newSubtask.trim()) {
-      setSubtasks([...subtasks, newSubtask.trim()]);
-      setNewSubtask('');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImageUrl(URL.createObjectURL(file)); // Cria um URL local para a imagem
     }
   };
 
-  const handleRemoveSubtask = (index: number) => {
-    const newSubtasks = [...subtasks];
-    newSubtasks.splice(index, 1);
-    setSubtasks(newSubtasks);
-  };
-  
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
-      // Mantém a hora atual se a data for alterada
-      const currentHours = dueDate?.getHours() || 23;
-      const currentMinutes = dueDate?.getMinutes() || 59;
+      // Usa a hora atual do estado dueTime para definir a hora na nova data
+      const [hours, minutes] = dueTime.split(':').map(Number);
       
       const newDate = new Date(date);
-      newDate.setHours(currentHours, minutes, 0, 0);
+      // Se dueTime for vazio ou inválido, usa o final do day (23:59)
+      if (isNaN(hours) || isNaN(minutes)) {
+        newDate.setHours(23, 59, 59, 999);
+      } else {
+        newDate.setHours(hours, minutes, 0, 0);
+      }
       
       setDueDate(newDate);
     } else {
@@ -73,11 +72,15 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         const newDate = new Date(dueDate);
         newDate.setHours(hours, minutes, 0, 0);
         setDueDate(newDate);
+    } else if (dueDate && !newTime) {
+        // Se o usuário apagar a hora, define para o final do dia
+        const newDate = new Date(dueDate);
+        newDate.setHours(23, 59, 59, 999);
+        setDueDate(newDate);
     }
   };
 
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim()) {
@@ -85,6 +88,19 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
       return;
     }
     
+    let finalImageUrl = imageUrl;
+    
+    if (selectedFile) {
+        // Se um arquivo foi selecionado, faça o upload
+        const uploadResult = await uploadFile(selectedFile);
+        if (uploadResult) {
+            finalImageUrl = uploadResult.url;
+        } else {
+            showError('Falha ao fazer upload da imagem.');
+            return;
+        }
+    }
+
     // Data de vencimento agora é opcional. Se não houver data, usamos uma data futura padrão (ex: 1 ano)
     let finalDueDate = dueDate;
     if (!finalDueDate) {
@@ -104,12 +120,24 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
       title: title.trim(),
       description: description.trim(),
       dueDate: finalDueDate,
-      imageUrl: imageUrl.trim(),
+      imageUrl: finalImageUrl,
       status: status,
-      subtasks: subtasks,
+      subtasks: [],
     };
 
     onSubmit(newPost as Omit<Post, 'id' | 'approvalLink'>);
+  };
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    
+    if (id === 'title') {
+      setTitle(value);
+    } else if (id === 'description') {
+      setDescription(value);
+    } else if (id === 'imageUrl') {
+      setImageUrl(value);
+    }
   };
 
   return (
@@ -119,7 +147,7 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         <Input
           id="title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={handleChange}
           placeholder="Título do post"
         />
       </div>
@@ -128,7 +156,7 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         <Textarea
           id="description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={handleChange}
           placeholder="Descrição/Legenda do post"
         />
       </div>
@@ -178,10 +206,30 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
       <div className="grid gap-2">
         <Label htmlFor="imageUrl">URL da Imagem (Capa 1080x1350)</Label>
         <div className="flex space-x-2">
-            <Input id="imageUrl" placeholder="URL da imagem" value={imageUrl} onChange={handleChange} />
-            <Button variant="outline" size="icon" disabled>
-                <Upload className="h-4 w-4" />
-            </Button>
+          <Input
+            id="imageUrl"
+            value={imageUrl}
+            onChange={handleChange}
+            placeholder="URL da imagem do post"
+            className="flex-grow"
+            disabled={isUploading}
+          />
+          <Input
+            id="fileUpload"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => document.getElementById('fileUpload')?.click()}
+            disabled={isUploading}
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       <div className="grid gap-2">
@@ -199,55 +247,12 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
           </SelectContent>
         </Select>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="subtasks">Subtarefas</Label>
-        {subtasks.map((subtask, index) => (
-          <div key={index} className="flex items-center space-x-2 mb-1">
-            <Input
-              type="text"
-              value={subtask}
-              readOnly
-              className="bg-muted/50"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => handleRemoveSubtask(index)}
-            >
-              <X className="h-4 w-4 text-red-500" />
-            </Button>
-          </div>
-        ))}
-        <div className="flex space-x-2">
-          <Input
-            type="text"
-            value={newSubtask}
-            onChange={(e) => setNewSubtask(e.target.value)}
-            placeholder="Nova subtarefa"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddSubtask();
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleAddSubtask}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
       <div className="flex justify-between pt-4">
         <Button variant="ghost" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600">
-          Salvar
+        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isUploading}>
+          {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Salvar'}
         </Button>
       </div>
     </form>
