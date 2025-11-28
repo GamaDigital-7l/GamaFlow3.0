@@ -64,7 +64,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
     }
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.EventForm) => {
     e.preventDefault();
 
     if (!name.trim()) {
