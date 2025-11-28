@@ -3,6 +3,7 @@ export enum OnboardingBlockType {
   Text = 'text',
   FileUpload = 'fileUpload',
   BriefingForm = 'briefingForm', // Novo tipo de bloco para formulários de briefing
+  MediaLink = 'mediaLink', // Novo tipo de bloco para links de mídia
   // Adicione outros tipos conforme necessário (ex: LoginVault, MediaGallery)
 }
 
@@ -21,6 +22,9 @@ export interface OnboardingBlock {
     formTitle?: string;
     formDescription?: string;
     questions?: BriefingQuestion[]; // Define as perguntas do briefing
+    // MediaLink specific
+    linkTitle?: string;
+    linkUrl?: string;
     // ... outros dados específicos de blocos
   };
 }
@@ -36,7 +40,7 @@ export interface BriefingQuestion {
 
 // Definindo o tipo para os arquivos simulados (deve ser o mesmo usado em VisualIdentityPage)
 export interface PlaybookFile {
-  id: string; // Usar string para consistência com UUID
+  id: string;
   name: string;
   type: string; // Ex: 'image/jpeg', 'application/pdf'
   url: string;

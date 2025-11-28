@@ -113,6 +113,9 @@ export const OnboardingBlockEditor: React.FC<OnboardingBlockEditorProps> = ({ in
         <Button type="button" variant="outline" onClick={() => handleAddBlock(OnboardingBlockType.Text)} disabled={isSaving}>
           <Plus className="h-4 w-4 mr-1" /> Adicionar Texto
         </Button>
+        <Button type="button" variant="outline" onClick={() => handleAddBlock(OnboardingBlockType.MediaLink)} disabled={isSaving}>
+          <Plus className="h-4 w-4 mr-1" /> Adicionar Link de Mídia
+        </Button>
       </div>
 
       <div className="flex justify-end pt-4">

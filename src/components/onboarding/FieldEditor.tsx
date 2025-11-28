@@ -12,14 +12,13 @@ import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 
 export interface FieldEditorProps {
-  field: BriefingField;
-  onChange: (updatedField: BriefingField) => void;
+  field: any;
+  onChange: (updatedField: any) => void;
   onDelete: () => void;
   onDuplicate: () => void;
-  allFields: BriefingField[];
+  allFields: any[];
   dragHandleProps?: any;
 }
 
@@ -38,50 +37,37 @@ const QUESTION_TYPE_OPTIONS: { value: FieldType, label: string }[] = [
 ];
 
 export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onChange, onDelete, onDuplicate, allFields, dragHandleProps }) => {
-  const handleUpdate = (key: keyof BriefingField, value: any) => {
-    onChange({ ...field, [key]: value });
+  const handleUpdate = (key: string, value: any) => {
+    onChange({ ...field, data: { ...field.data, [key]: value } });
   };
 
-  const handleOptionChange = (optionId: string, newLabel: string) => {
-    const updatedOptions = (field.options || []).map(opt =>
-      opt.id === optionId ? { ...opt, label: newLabel, value: newLabel } : opt
-    );
-    handleUpdate('options', updatedOptions);
-  };
-
-  const handleAddOption = () => {
-    const newOption: FieldOption = {
-      id: Date.now().toString(),
-      label: `Opção ${field.options ? field.options.length + 1 : 1}`,
-      value: `Opção ${field.options ? field.options.length + 1 : 1}`,
-    };
-    handleUpdate('options', [...(field.options || []), newOption]);
-  };
-
-  const handleRemoveOption = (optionId: string) => {
-    const updatedOptions = (field.options || []).filter(opt => opt.id !== optionId);
-    handleUpdate('options', updatedOptions);
-  };
-
-  const renderOptions = () => {
-    return (
-      <div className="space-y-2">
-        <Label>Opções</Label>
-        <div className="space-y-2">
-          {(field.options || []).map((opt) => (
-            <div key={opt.id} className="flex items-center space-x-2">
-              <Input value={opt.label} onChange={(e) => handleOptionChange(opt.id, e.target.value)} />
-              <Button variant="ghost" size="icon" onClick={() => handleRemoveOption(opt.id)}>
-                <Trash2 className="h-4 w-4 text-muted-foreground" />
-              </Button>
+  const renderTypeSpecificFields = () => {
+    switch (field.type) {
+      case 'mediaLink':
+        return (
+          <>
+            <div className="grid gap-2">
+              <Label htmlFor="linkTitle">Título do Link</Label>
+              <Input
+                id="linkTitle"
+                value={field.data.linkTitle || ''}
+                onChange={(e) => handleUpdate('linkTitle', e.target.value)}
+              />
             </div>
-          ))}
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={handleAddOption}>
-          <Plus className="h-4 w-4 mr-2" /> Adicionar Opção
-        </Button>
-      </div>
-    );
+            <div className="grid gap-2">
+              <Label htmlFor="linkUrl">URL do Link</Label>
+              <Input
+                id="linkUrl"
+                type="url"
+                value={field.data.linkUrl || ''}
+                onChange={(e) => handleUpdate('linkUrl', e.target.value)}
+              />
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -91,9 +77,10 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onChange, onDel
           <div {...dragHandleProps} className="cursor-grab">
             <GripVertical className="h-5 w-5 text-muted-foreground" />
           </div>
-          <Select value={field.type} onValueChange={(value) => handleUpdate('type', value as FieldType)}>
+          {/* Select para o tipo de bloco */}
+          <Select value={field.type} onValueChange={(value) => onChange({ ...field, type: value })}>
             <SelectTrigger className="w-[180px] h-8">
-              <SelectValue placeholder="Tipo de Campo" />
+              <SelectValue placeholder="Tipo de Bloco" />
             </SelectTrigger>
             <SelectContent>
               {QUESTION_TYPE_OPTIONS.map(opt => (
@@ -112,35 +99,20 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onChange, onDel
 
       <Separator />
 
+      {/* Campos comuns a todos os blocos */}
       <div className="grid gap-2">
-        <Label htmlFor="label">Rótulo / Pergunta</Label>
-        <Input id="label" value={field.label} onChange={(e) => handleUpdate('label', e.target.value)} />
+        <Label htmlFor="title">Título</Label>
+        <Input
+          id="title"
+          value={field.data.title || ''}
+          onChange={(e) => handleUpdate('title', e.target.value)}
+        />
       </div>
 
-      {['text_short', 'text_long', 'number', 'link', 'dropdown'].includes(field.type) && (
-        <div className="grid gap-2">
-          <Label htmlFor="placeholder">Texto de Exemplo (Placeholder)</Label>
-          <Input id="placeholder" value={field.placeholder || ''} onChange={(e) => handleUpdate('placeholder', e.target.value)} />
-        </div>
-      )}
-
-      {['select_single', 'select_multiple', 'dropdown'].includes(field.type) && renderOptions()}
-
-      <Separator />
-
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="advanced-options">
-          <AccordionTrigger>Opções Avançadas</AccordionTrigger>
-          <AccordionContent className="space-y-4 pt-4">
-            {field.type !== 'section' && field.type !== 'description' && (
-              <div className="flex items-center justify-between">
-                <Label htmlFor="required">Obrigatório</Label>
-                <Switch id="required" checked={field.isRequired} onCheckedChange={(checked) => handleUpdate('isRequired', checked)} />
-              </div>
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      {/* Campos específicos do tipo de bloco */}
+      {renderTypeSpecificFields()}
     </Card>
   );
 };
+
+export default FieldEditor;
