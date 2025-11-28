@@ -16,6 +16,22 @@ type ClientFormData = Omit<Client, 'id' | 'posts'>;
 interface ClientFormProps {
   client?: Client;
   onSubmit: (client: ClientFormData) => void;
+  onCancel: () from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { showSuccess, showError } from '@/utils/toast';
+import { ClientAvatar } from './ClientAvatar'; // Importando o novo componente
+import { Upload, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+
+// Definindo o tipo de dados que o formulário retorna (sem id e posts)
+type ClientFormData = Omit<Client, 'id' | 'posts'>;
+
+interface ClientFormProps {
+  client?: Client;
+  onSubmit: (client: ClientFormData) => void;
   onCancel: () => void;
 }
 
