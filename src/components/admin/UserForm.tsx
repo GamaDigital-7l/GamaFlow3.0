@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Checkbox } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useClientStore } from '@/hooks/use-client-store';
 import { showError } from '@/utils/toast';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface UserFormProps {
   onSubmit: (data: { email: string, password: string, client_id: string }) => void;
@@ -14,7 +15,7 @@ interface UserFormProps {
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, isSubmitting }) => {
-  const { clients, isLoading } = useClientStore();
+  const { clients, isLoading } = useClientStore(); // Usando isLoading do client store
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [clientId, setClientId] = useState('');
@@ -90,7 +91,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, isSubmit
         <Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isSubmitting || !clientId}>
+        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isSubmitting || isLoading}>
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Criar Usuário Cliente'}
         </Button>
       </div>
