@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Loader2, Target, Filter, Search, Briefcase } from 'lucide-react';
-import { useGoals } from '@/hooks/use-goals';
-import { Goal, GoalCategory, GoalStatus, PortfolioGoalType, PortfolioCategory } from '@/types/goals';
-import { GoalForm } from '@/components/goals/GoalForm';
-import { GoalCard } from '@/components/goals/GoalCard';
-import { Separator } from '@/components/ui/separator';
-import { useClientStore } from '@/hooks/use-client-store';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { CalendarIcon, Loader2, Plus, X } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Goal, GoalCategory, GoalStatus, PortfolioGoalType, PortfolioCategory } from '@/types/goals';
+import { showError } from '@/utils/toast';
+import { useClientStore } from '@/hooks/use-client-store';
+import { Separator } from '@/components/ui/separator'; // Importação adicionada
 
 interface GoalFormProps {
   initialData?: Goal;
@@ -27,280 +25,331 @@ const STATUS_OPTIONS: GoalStatus[] = ['Em Andamento', 'Concluída', 'Atrasada'];
 const PORTFOLIO_TYPE_OPTIONS: PortfolioGoalType[] = ['Projeto Real', 'Projeto Conceito', 'Estudo Pessoal'];
 const PORTFOLIO_CATEGORY_OPTIONS: PortfolioCategory[] = ['Design', '3D', 'Vídeo', 'Landing Page', 'Social Media', 'Outro'];
 
-const GoalsPage: React.FC = () => {
-  const { goals, isLoading, addGoal, updateGoal, deleteGoal, isAdding, isUpdating, isDeleting } = useGoals();
+export const GoalForm: React.FC<GoalFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting }) => {
   const { clients } = useClientStore();
   
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
-  const [statusFilter, setStatusFilter] = useState<string>('Todas');
-  const [categoryFilter, setCategoryFilter] = useState<string>('Todas');
-  const [portfolioCategoryFilter, setPortfolioCategoryFilter] = useState<string>('Todas');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'geral' | 'portfolio'>('geral');
-
-  const clientMap = useMemo(() => {
-    return new Map(clients.map(c => [c.id, c.name]));
-  }, [clients]);
-
-  const handleOpenEdit = (goal: Goal) => {
-    setEditingGoal(goal);
-    setIsDialogOpen(true);
+  const getInitialClientId = (id?: string) => {
+    if (id === '' || id === null || id === undefined) return 'none';
+    return id;
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingGoal(undefined);
-  };
-
-  const handleSubmit = (goalData: Omit<Goal, 'id' | 'user_id' | 'createdAt'>) => {
-    if (editingGoal) {
-      // Update
-      updateGoal({ ...editingGoal, ...goalData });
-    } else {
-      // Add
-      addGoal(goalData);
-    }
-    handleCloseDialog();
-  };
-
-  const filteredGoals = useMemo(() => {
-    let filtered = goals;
-
-    // 1. Filtro por Aba (Geral vs Portfólio)
-    if (activeTab === 'portfolio') {
-        filtered = filtered.filter(g => g.isPortfolioGoal);
-    } else {
-        filtered = filtered.filter(g => !g.isPortfolioGoal);
-    }
-
-    // 2. Filtro por Status
-    if (statusFilter !== 'Todas') {
-      filtered = filtered.filter(g => g.status === statusFilter);
-    }
-
-    // 3. Filtro por Categoria (Geral)
-    if (activeTab === 'geral' && categoryFilter !== 'Todas') {
-      filtered = filtered.filter(g => g.category === categoryFilter);
-    }
-    
-    // 4. Filtro por Categoria (Portfólio)
-    if (activeTab === 'portfolio' && portfolioCategoryFilter !== 'Todas') {
-        filtered = filtered.filter(g => g.portfolioCategory === portfolioCategoryFilter);
-    }
-
-    // 5. Busca por Título
-    if (searchTerm.trim()) {
-      const lowerCaseSearch = searchTerm.trim().toLowerCase();
-      filtered = filtered.filter(g => 
-        g.title.toLowerCase().includes(lowerCaseSearch) ||
-        g.description?.toLowerCase().includes(lowerCaseSearch)
-      );
-    }
-    
-    // Ordenação: Atrasadas > Em Andamento > Concluídas, e por data de vencimento
-    return filtered.sort((a, b) => {
-        const statusOrder: Record<GoalStatus, number> = { 'Atrasada': 1, 'Em Andamento': 2, 'Concluída': 3 };
-        
-        if (statusOrder[a.status] !== statusOrder[b.status]) {
-            return statusOrder[a.status] - statusOrder[b.status];
-        }
-        
-        return a.dueDate.getTime() - b.dueDate.getTime();
-    });
-
-  }, [goals, statusFilter, categoryFilter, portfolioCategoryFilter, searchTerm, activeTab]);
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [category, setCategory] = useState<GoalCategory>(initialData?.category || 'Profissional');
+  const [startDate, setStartDate] = useState<Date | undefined>(initialData?.startDate || new Date());
+  const [dueDate, setDueDate] = useState<Date | undefined>(initialData?.dueDate || undefined);
+  const [targetValue, setTargetValue] = useState(initialData?.targetValue?.toString() || '');
+  const [currentValue, setCurrentValue] = useState(initialData?.currentValue?.toString() || '0');
+  const [isRecurrent, setIsRecurrent] = useState(initialData?.isRecurrent || false);
+  const [status, setStatus] = useState<GoalStatus>(initialData?.status || 'Em Andamento');
+  // Garante que clientId seja 'none' se for nulo, indefinido ou string vazia
+  const [clientId, setClientId] = useState(getInitialClientId(initialData?.clientId)); 
   
-  // Resumo de Metas do Mês (Geral)
-  const monthlySummary = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    // Filtra metas que estão ativas ou que venceram/concluíram neste mês
-    const relevantGoals = goals.filter(g => 
-        g.startDate.getMonth() === currentMonth && 
-        g.startDate.getFullYear() === currentYear &&
-        !g.isPortfolioGoal
-    );
-    
-    const inProgress = relevantGoals.filter(g => g.status === 'Em Andamento').length;
-    const completed = relevantGoals.filter(g => g.status === 'Concluída').length;
-    const overdue = relevantGoals.filter(g => g.status === 'Atrasada').length;
-    
-    return { inProgress, completed, overdue, total: relevantGoals.length };
-  }, [goals]);
-  
-  // Resumo de Metas de Portfólio
-  const portfolioSummary = useMemo(() => {
-    const portfolioGoals = goals.filter(g => g.isPortfolioGoal);
-    
-    const inProgress = portfolioGoals.filter(g => g.status === 'Em Andamento').length;
-    const completed = portfolioGoals.filter(g => g.status === 'Concluída').length;
-    const overdue = portfolioGoals.filter(g => g.status === 'Atrasada').length;
-    
-    return { inProgress, completed, overdue, total: portfolioGoals.length };
-  }, [goals]);
+  // Portfolio Fields
+  const [isPortfolioGoal, setIsPortfolioGoal] = useState(initialData?.isPortfolioGoal || false);
+  const [portfolioType, setPortfolioType] = useState<PortfolioGoalType>(initialData?.portfolioType || 'Projeto Conceito');
+  const [portfolioCategory, setPortfolioCategory] = useState<PortfolioCategory>(initialData?.portfolioCategory || 'Design');
+  const [portfolioLinks, setPortfolioLinks] = useState<string[]>(initialData?.portfolioLinks || []);
+  const [newLink, setNewLink] = useState('');
 
+
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title);
+      setDescription(initialData.description || '');
+      setCategory(initialData.category);
+      setStartDate(initialData.startDate);
+      setDueDate(initialData.dueDate);
+      setTargetValue(initialData.targetValue?.toString() || '');
+      setCurrentValue(initialData.currentValue?.toString() || '0');
+      setIsRecurrent(initialData.isRecurrent);
+      setStatus(initialData.status);
+      // Mapeia clientId nulo/vazio para 'none' para o Select
+      setClientId(getInitialClientId(initialData.clientId)); 
+      
+      // Portfolio
+      setIsPortfolioGoal(initialData.isPortfolioGoal || false);
+      setPortfolioType(initialData.portfolioType || 'Projeto Conceito');
+      setPortfolioCategory(initialData.portfolioCategory || 'Design');
+      setPortfolioLinks(initialData.portfolioLinks || []);
+    }
+  }, [initialData]);
+
+  const handleAddLink = () => {
+    if (newLink.trim()) {
+      setPortfolioLinks(prev => [...prev, newLink.trim()]);
+      setNewLink('');
+    }
+  };
+  
+  const handleRemoveLink = (index: number) => {
+    setPortfolioLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClientIdChange = (value: string) => {
+    setClientId(value);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!title.trim()) {
+      showError('O título da meta é obrigatório.');
+      return;
+    }
+    if (!dueDate) {
+        showError('A data de vencimento é obrigatória.');
+        return;
+    }
+    
+    const parsedTargetValue = targetValue ? parseFloat(targetValue) : undefined;
+    if (targetValue && (isNaN(parsedTargetValue) || parsedTargetValue < 0)) {
+        showError('Valor alvo deve ser um número válido.');
+        return;
+    }
+    
+    const parsedCurrentValue = currentValue ? parseFloat(currentValue) : 0;
+    if (isNaN(parsedCurrentValue) || parsedCurrentValue < 0) {
+        showError('Valor atual deve ser um número válido.');
+        return;
+    }
+
+    const finalClientId = clientId === 'none' ? undefined : clientId;
+
+    const goalData: Omit<Goal, 'id' | 'user_id' | 'createdAt'> = {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      category,
+      startDate: startDate || new Date(),
+      dueDate,
+      targetValue: parsedTargetValue,
+      currentValue: parsedCurrentValue,
+      isRecurrent,
+      status,
+      clientId: finalClientId,
+      isPortfolioGoal,
+      portfolioType: isPortfolioGoal ? portfolioType : undefined,
+      portfolioCategory: isPortfolioGoal ? portfolioCategory : undefined,
+      portfolioLinks: isPortfolioGoal ? portfolioLinks : undefined,
+    };
+
+    onSubmit(goalData);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center space-x-3">
-          <Target className="h-7 w-7 text-dyad-500" />
-          <span>Metas e Objetivos</span>
-        </h1>
-        <Button 
-          onClick={() => setIsDialogOpen(true)} 
-          className="bg-dyad-500 hover:bg-dyad-600"
-          disabled={isAdding || isUpdating || isDeleting}
-        >
-          <Plus className="h-4 w-4 mr-2" /> Nova Meta
-        </Button>
+    <form onSubmit={handleSubmit} className="grid gap-4">
+      <div className="grid gap-2">
+        <Label htmlFor="title">Título da Meta</Label>
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={isSubmitting} />
       </div>
-      
-      <p className="text-muted-foreground">Acompanhe seu progresso em objetivos pessoais, profissionais e de portfólio.</p>
+      <div className="grid gap-2">
+        <Label htmlFor="description">Descrição</Label>
+        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSubmitting} />
+      </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'geral' | 'portfolio')} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="geral" className="flex items-center space-x-2">
-            <Target className="h-4 w-4" />
-            <span>Metas Gerais (Clientes, Financeiro, Pessoal)</span>
-          </TabsTrigger>
-          <TabsTrigger value="portfolio" className="flex items-center space-x-2">
-            <Briefcase className="h-4 w-4" />
-            <span>Metas de Portfólio ({portfolioSummary.total})</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="geral" className="mt-4 space-y-6">
-            {/* Resumo de Metas do Mês (Geral) */}
-            <Card className="p-4 border-l-4 border-dyad-500/50 shadow-md">
-                <CardTitle className="text-lg mb-2">Metas Gerais do Mês</CardTitle>
-                <div className="flex flex-wrap gap-4 text-sm font-medium">
-                    <span className="text-dyad-500">{monthlySummary.inProgress} em andamento</span>
-                    <span className="text-green-500">{monthlySummary.completed} concluída(s)</span>
-                    <span className="text-red-500">{monthlySummary.overdue} atrasada(s)</span>
-                </div>
-            </Card>
-        </TabsContent>
-        
-        <TabsContent value="portfolio" className="mt-4 space-y-6">
-            {/* Resumo de Metas de Portfólio */}
-            <Card className="p-4 border-l-4 border-blue-500/50 shadow-md">
-                <CardTitle className="text-lg mb-2">Estatísticas de Portfólio</CardTitle>
-                <div className="flex flex-wrap gap-4 text-sm font-medium">
-                    <span className="text-dyad-500">{portfolioSummary.inProgress} em andamento</span>
-                    <span className="text-green-500">{portfolioSummary.completed} concluída(s)</span>
-                    <span className="text-red-500">{portfolioSummary.overdue} atrasada(s)</span>
-                </div>
-            </Card>
-        </TabsContent>
-      </Tabs>
+      <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+        <Label htmlFor="isPortfolioGoal" className="font-medium">Meta de Portfólio?</Label>
+        <Switch
+          id="isPortfolioGoal"
+          checked={isPortfolioGoal}
+          onCheckedChange={setIsPortfolioGoal}
+          disabled={isSubmitting}
+        />
+      </div>
 
-      <Separator />
-
-      {/* Filtros e Busca */}
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="grid gap-2 w-full sm:w-auto flex-grow sm:flex-grow-0">
-          <Label htmlFor="search">Buscar por Título/Descrição</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              id="search"
-              placeholder="Buscar meta..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-        
-        <div className="grid gap-2 w-full sm:w-40">
-          <Label htmlFor="statusFilter">Status</Label>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger id="statusFilter">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Todas">Todas</SelectItem>
-              {STATUS_OPTIONS.map(opt => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {activeTab === 'geral' && (
-            <div className="grid gap-2 w-full sm:w-40">
-              <Label htmlFor="categoryFilter">Categoria</Label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger id="categoryFilter">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
+      {isPortfolioGoal && (
+        <Card className="p-4 space-y-4 border-l-4 border-blue-500/50">
+          <h3 className="text-lg font-semibold">Detalhes do Portfólio</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="portfolioType">Tipo de Projeto</Label>
+              <Select value={portfolioType} onValueChange={(value) => setPortfolioType(value as PortfolioGoalType)} disabled={isSubmitting}>
+                <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Todas">Todas</SelectItem>
-                  {CATEGORY_OPTIONS.map(opt => (
+                  {PORTFOLIO_TYPE_OPTIONS.map(opt => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-        )}
-        
-        {activeTab === 'portfolio' && (
-            <div className="grid gap-2 w-full sm:w-40">
-              <Label htmlFor="portfolioCategoryFilter">Categoria Criativa</Label>
-              <Select value={portfolioCategoryFilter} onValueChange={setPortfolioCategoryFilter}>
-                <SelectTrigger id="portfolioCategoryFilter">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
+            <div className="grid gap-2">
+              <Label htmlFor="portfolioCategory">Categoria Criativa</Label>
+              <Select value={portfolioCategory} onValueChange={(value) => setPortfolioCategory(value as PortfolioCategory)} disabled={isSubmitting}>
+                <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Todas">Todas</SelectItem>
                   {PORTFOLIO_CATEGORY_OPTIONS.map(opt => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-        )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="portfolioLinks">Links (Behance, Dribbble, etc.)</Label>
+            <div className="space-y-2">
+              {portfolioLinks.map((link, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <Input value={link} readOnly className="bg-muted/50" />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveLink(index)} disabled={isSubmitting}>
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div className="flex space-x-2">
+              <Input 
+                value={newLink} 
+                onChange={(e) => setNewLink(e.target.value)} 
+                placeholder="Adicionar novo link"
+                disabled={isSubmitting}
+              />
+              <Button type="button" onClick={handleAddLink} size="icon" disabled={isSubmitting || !newLink.trim()}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="category">Categoria</Label>
+          <Select value={category} onValueChange={(value) => setCategory(value as GoalCategory)} disabled={isSubmitting}>
+            <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+            <SelectContent>
+              {CATEGORY_OPTIONS.map(opt => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="clientId">Cliente Associado (Opcional)</Label>
+          <Select value={clientId} onValueChange={handleClientIdChange} disabled={isSubmitting}>
+            <SelectTrigger><SelectValue placeholder="Nenhum Cliente" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhum</SelectItem>
+              {clients.map(client => (
+                <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Lista de Metas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-        {filteredGoals.length === 0 ? (
-          <p className="col-span-full text-center p-8 text-muted-foreground border rounded-lg">
-            Nenhuma meta encontrada com os filtros aplicados.
-          </p>
-        ) : (
-          filteredGoals.map(goal => (
-            <GoalCard 
-              key={goal.id} 
-              goal={goal} 
-              onEdit={handleOpenEdit} 
-              onDelete={deleteGoal}
-              isDeleting={isDeleting}
-            />
-          ))
-        )}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label>Data de Início</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !startDate && "text-muted-foreground"
+                )}
+                disabled={isSubmitting}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {startDate ? format(startDate, "dd/MM/yyyy") : "Selecione a data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={setStartDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="grid gap-2">
+          <Label>Data de Vencimento</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !dueDate && "text-muted-foreground"
+                )}
+                disabled={isSubmitting}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dueDate ? format(dueDate, "dd/MM/yyyy") : "Selecione a data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dueDate}
+                onSelect={setDueDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* Diálogo de Criação/Edição */}
-      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingGoal ? 'Editar Meta' : 'Nova Meta'}</DialogTitle>
-          </DialogHeader>
-          <GoalForm 
-            initialData={editingGoal}
-            onSubmit={handleSubmit}
-            onCancel={handleCloseDialog}
-            isSubmitting={isAdding || isUpdating}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="targetValue">Valor Alvo (Opcional)</Label>
+          <Input 
+            id="targetValue" 
+            type="number" 
+            step="0.01"
+            value={targetValue} 
+            onChange={(e) => setTargetValue(e.target.value)} 
+            placeholder="Ex: 1000.00"
+            disabled={isSubmitting} 
           />
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="currentValue">Valor Atual</Label>
+          <Input 
+            id="currentValue" 
+            type="number" 
+            step="0.01"
+            value={currentValue} 
+            onChange={(e) => setCurrentValue(e.target.value)} 
+            placeholder="0.00"
+            disabled={isSubmitting} 
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+          <Label htmlFor="isRecurrent" className="font-medium">Recorrente?</Label>
+          <Switch
+            id="isRecurrent"
+            checked={isRecurrent}
+            onCheckedChange={setIsRecurrent}
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="status">Status</Label>
+          <Select value={status} onValueChange={(value) => setStatus(value as GoalStatus)} disabled={isSubmitting}>
+            <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map(opt => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-4">
+        <Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+          Cancelar
+        </Button>
+        <Button type="submit" className="bg-dyad-500 hover:bg-dyad-600" disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Salvar Meta'}
+        </Button>
+      </div>
+    </form>
   );
 };
-
-export default GoalsPage;
