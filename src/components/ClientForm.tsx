@@ -5,28 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess, showError } from '@/utils/toast';
-import { ClientAvatar } from './ClientAvatar'; // Importando o novo componente
+import { ClientAvatar } from './ClientAvatar';
 import { Upload, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
 
-// Definindo o tipo de dados que o formulário retorna (sem id e posts)
-type ClientFormData = Omit<Client, 'id' | 'posts'>;
-
-interface ClientFormProps {
-  client?: Client;
-  onSubmit: (client: ClientFormData) => void;
-  onCancel: () from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { showSuccess, showError } from '@/utils/toast';
-import { ClientAvatar } from './ClientAvatar'; // Importando o novo componente
-import { Upload, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
-
-// Definindo o tipo de dados que o formulário retorna (sem id e posts)
 type ClientFormData = Omit<Client, 'id' | 'posts'>;
 
 interface ClientFormProps {
@@ -41,15 +22,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
   const [status, setStatus] = useState<ClientStatus>(client?.status || 'Ativo');
   const [type, setType] = useState<ClientType>(client?.type || 'Fixo');
   const [color, setColor] = useState(client?.color || '#ED1857');
-  
-  // Novos campos
   const [phone, setPhone] = useState(client?.phone || '');
-  const [whatsappNumber, setWhatsappNumber] = useState(client?.whatsappNumber || ''); // NOVO ESTADO
+  const [whatsappNumber, setWhatsappNumber] = useState(client?.whatsappNumber || '');
   const [email, setEmail] = useState(client?.email || '');
   const [cnpj, setCnpj] = useState(client?.cnpj || '');
-  const [monthlyPostGoal, setMonthlyPostGoal] = useState(client?.monthlyPostGoal.toString() || '8'); // Novo estado
-  
-  // Estado para o arquivo de upload
+  const [monthlyPostGoal, setMonthlyPostGoal] = useState(client?.monthlyPostGoal?.toString() || '8');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -57,27 +34,26 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      // Cria um URL temporário para o preview imediato
       const tempUrl = URL.createObjectURL(file);
       setLogoUrl(tempUrl);
       showSuccess('Arquivo selecionado para upload. Clique em Salvar para persistir.');
     }
   };
-  
-  const handleSubmit = async (e: React.EventForm) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
       showError('O nome do cliente não pode estar vazio.');
       return;
     }
-    
-    const goal = parseInt(monthlyPostGoal);
+
+    const goal = parseInt(monthlyPostGoal || '0');
     if (isNaN(goal) || goal < 0) {
-        showError('A meta mensal deve ser um número válido.');
-        return;
+      showError('A meta mensal deve ser um número válido.');
+      return;
     }
-    
+
     let finalLogoUrl = logoUrl;
 
     const newClient: ClientFormData = {
@@ -87,16 +63,16 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
       type: type,
       color: color,
       phone: phone.trim() || undefined,
-      whatsappNumber: whatsappNumber.trim() || undefined, // NOVO CAMPO
+      whatsappNumber: whatsappNumber.trim() || undefined,
       email: email.trim() || undefined,
       cnpj: cnpj.trim() || undefined,
-      monthlyPostGoal: goal, // Incluindo a meta
+      monthlyPostGoal: goal,
     };
 
     onSubmit(newClient);
   };
-  
-  const isSubmittingForm = isUploading; // Usamos isUploading para desabilitar o botão
+
+  const isSubmittingForm = isUploading;
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
@@ -114,29 +90,29 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
           />
         </div>
       </div>
-      
+
       <div className="grid gap-2">
         <Label htmlFor="logoUrl">URL do Logo / Upload</Label>
         <div className="flex space-x-2">
           <Input
             id="logoUrl"
             value={logoUrl}
-            onChange={(e) => { setLogoUrl(e.target.value); setSelectedFile(null); }} // Limpa o arquivo se a URL for editada manualmente
+            onChange={(e) => { setLogoUrl(e.target.value); setSelectedFile(null); }}
             placeholder="URL do logo do cliente"
             className="flex-grow"
             disabled={isSubmittingForm}
           />
-          <Input 
-            id="fileUpload" 
-            type="file" 
-            accept=".jpg, .png, .webp" 
-            onChange={handleFileChange} 
+          <Input
+            id="fileUpload"
+            type="file"
+            accept=".jpg, .png, .webp"
+            onChange={handleFileChange}
             className="hidden"
           />
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="icon" 
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
             onClick={() => document.getElementById('fileUpload')?.click()}
             disabled={isSubmittingForm}
           >
@@ -155,7 +131,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
           <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contato@cliente.com" disabled={isSubmittingForm} />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="cnpj">CNPJ (Opcional)</Label>
@@ -166,8 +142,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
           <Input id="whatsappNumber" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="5511999999999 ou ID do Grupo" disabled={isSubmittingForm} />
         </div>
       </div>
-      
-      {/* Novo Campo: Meta Mensal */}
+
       <div className="grid gap-2">
         <Label htmlFor="monthlyPostGoal">Posts Mensais Contratados (Meta)</Label>
         <Input
