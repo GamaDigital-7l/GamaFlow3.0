@@ -11,6 +11,10 @@ import { ClientInteractionsHistory } from '@/components/ClientInteractionsHistor
 import ClientNotesSection from '@/components/ClientNotesSection';
 import OnboardingConfigPage from './playbook/OnboardingConfigPage'; // Importando OnboardingConfigPage
 
+interface ClientWorkspaceProps {
+  clientId: string;
+}
+
 const navItems = [
   { path: '', title: 'Kanban', icon: LayoutDashboard, roles: ['admin'] },
   { path: 'interacoes', title: 'Interações', icon: MessageSquare, roles: ['admin'] },
@@ -18,13 +22,13 @@ const navItems = [
   { path: 'onboarding-config', title: 'Onboarding', icon: ClipboardList, roles: ['admin'] }, // NOVO ITEM
 ];
 
-const ClientWorkspacePage: React.FC = () => {
+const ClientWorkspacePage: React.FC = ({ }) => {
   const { clientId } = useParams<{ clientId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   // Usamos isLoading diretamente do store
   const { getClientById, isLoading: isLoadingClientStore } = useClientStore(); 
-  const { userRole, isLoading: isLoadingSession } = useSession();
+  const { userRole, clientId: sessionClientId, isLoading: isLoadingSession } = useSession();
   
   const client = getClientById(clientId || '');
   

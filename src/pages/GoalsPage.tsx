@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,16 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Loader2, Target, Filter, Search, Briefcase } from 'lucide-react';
 import { useGoals } from '@/hooks/use-goals';
-import { Goal, GoalCategory, GoalStatus, PortfolioCategory } from '@/types/goals';
+import { Goal, GoalCategory, GoalStatus, PortfolioGoalType, PortfolioCategory } from '@/types/goals';
 import { GoalForm } from '@/components/goals/GoalForm';
 import { GoalCard } from '@/components/goals/GoalCard';
 import { Separator } from '@/components/ui/separator';
 import { useClientStore } from '@/hooks/use-client-store';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+
+interface GoalFormProps {
+  initialData?: Goal;
+  onSubmit: (goal: Omit<Goal, 'id' | 'user_id' | 'createdAt'>) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}
 
 const CATEGORY_OPTIONS: GoalCategory[] = ['Financeiro', 'Pessoal', 'Profissional', 'Saúde', 'Clientes', 'Agência', 'Outros'];
 const STATUS_OPTIONS: GoalStatus[] = ['Em Andamento', 'Concluída', 'Atrasada'];
+const PORTFOLIO_TYPE_OPTIONS: PortfolioGoalType[] = ['Projeto Real', 'Projeto Conceito', 'Estudo Pessoal'];
 const PORTFOLIO_CATEGORY_OPTIONS: PortfolioCategory[] = ['Design', '3D', 'Vídeo', 'Landing Page', 'Social Media', 'Outro'];
 
 const GoalsPage: React.FC = () => {
@@ -108,17 +117,18 @@ const GoalsPage: React.FC = () => {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    const monthlyGoals = goals.filter(g => 
+    // Filtra metas que estão ativas ou que venceram/concluíram neste mês
+    const relevantGoals = goals.filter(g => 
         g.startDate.getMonth() === currentMonth && 
         g.startDate.getFullYear() === currentYear &&
         !g.isPortfolioGoal
     );
     
-    const inProgress = monthlyGoals.filter(g => g.status === 'Em Andamento').length;
-    const completed = monthlyGoals.filter(g => g.status === 'Concluída').length;
-    const overdue = monthlyGoals.filter(g => g.status === 'Atrasada').length;
+    const inProgress = relevantGoals.filter(g => g.status === 'Em Andamento').length;
+    const completed = relevantGoals.filter(g => g.status === 'Concluída').length;
+    const overdue = relevantGoals.filter(g => g.status === 'Atrasada').length;
     
-    return { inProgress, completed, overdue };
+    return { inProgress, completed, overdue, total: relevantGoals.length };
   }, [goals]);
   
   // Resumo de Metas de Portfólio
@@ -132,15 +142,6 @@ const GoalsPage: React.FC = () => {
     return { inProgress, completed, overdue, total: portfolioGoals.length };
   }, [goals]);
 
-
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />
-        <p className="mt-2 text-muted-foreground">Carregando metas...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
