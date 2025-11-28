@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { v4 as uuidv4 } from 'uuid';
-import { storage } from '@/integrations/supabase/storage'; // Importe o cliente storage
+import { supabase } from '@/integrations/supabase/client'; // Importe o cliente Supabase
 
 export const usePlaybookUpload = (clientId: string) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -17,7 +17,8 @@ export const usePlaybookUpload = (clientId: string) => {
       const filename = `playbook-files/${clientId}/${uuidv4()}-${file.name}`;
 
       // Use o cliente Supabase Storage para fazer o upload
-      const { data, error } = await storage
+      const { data, error } = await supabase
+        .storage
         .from('playbook-files') // Substitua pelo nome do seu bucket
         .upload(filename, file, {
           cacheControl: '3600',
@@ -29,7 +30,8 @@ export const usePlaybookUpload = (clientId: string) => {
       }
 
       // Obtenha o URL público do arquivo
-      const { data: { publicUrl } } = storage
+      const { data: { publicUrl } } = await supabase
+        .storage
         .from('playbook-files') // Substitua pelo nome do seu bucket
         .getPublicUrl(data.path);
 
