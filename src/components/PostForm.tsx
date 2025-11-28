@@ -17,6 +17,7 @@ interface PostFormProps {
   post?: Post;
   onSubmit: (post: Omit<Post, 'id' | 'approvalLink'>) => void;
   onCancel: () => void;
+  clientId: string; // Adding clientId prop
 }
 
 // Função auxiliar para formatar a hora inicial (HH:mm)
@@ -25,7 +26,7 @@ const getInitialTime = (date?: Date): string => {
     return format(date, 'HH:mm');
 };
 
-export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) => {
+export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel, clientId }) => {
   const [title, setTitle] = useState(post?.title || '');
   const [description, setDescription] = useState(post?.description || '');
   const [dueDate, setDueDate] = useState<Date | undefined>(post?.dueDate || undefined);
@@ -33,7 +34,7 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
   const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // Novo estado para o arquivo selecionado
   const [status, setStatus] = useState<KanbanColumnId>(post?.status || 'Produção');
-  const { uploadFile, isUploading } = usePlaybookUpload(''); // Usando o hook de upload
+  const { uploadFile, isUploading } = usePlaybookUpload(clientId); // Usando o hook de upload
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
