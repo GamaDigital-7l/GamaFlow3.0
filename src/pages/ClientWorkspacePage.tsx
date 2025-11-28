@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { ClientWorkspace } from '@/components/kanban/ClientWorkspace';
+import { ClientWorkspace as ClientWorkspaceComponent } from '@/components/kanban/ClientWorkspace';
 import { useClientStore } from '@/hooks/use-client-store';
 import { cn } from '@/lib/utils';
 import { LayoutDashboard, FileText, Loader2, Edit, ClipboardList, MessageSquare, Notebook } from 'lucide-react';
@@ -87,7 +87,7 @@ const ClientWorkspacePage: React.FC = ({ }) => {
               key={item.path}
               to={`${basePath}/${item.path}`}
               className={cn(
-                "flex items-center p-2 rounded-md text-sm font-medium transition-colors",
+                "flex items-center p-2 rounded-md text-sm font-medium transition-colors duration-200",
                 location.pathname === `${basePath}/${item.path}` || 
                 (location.pathname === basePath && item.path === '')
                   ? "bg-dyad-500 text-white hover:bg-dyad-600"
@@ -114,7 +114,7 @@ const ClientWorkspacePage: React.FC = ({ }) => {
       {/* Conteúdo Aninhado */}
       <Routes>
         {/* Rota principal do workspace (Kanban) */}
-        <Route index element={<ClientWorkspace clientId={clientId} />} />
+        <Route index element={<ClientWorkspaceComponent clientId={clientId} />} />
         
         {/* Rota de Interações */}
         <Route path="interacoes" element={<ClientInteractionsHistory clientId={clientId} clientName={client.name} />} />
