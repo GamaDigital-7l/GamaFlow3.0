@@ -258,7 +258,7 @@ export const useHabits = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteTaskFromDB,
+    mutationFn: deleteHabitFromDB,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [HABITS_QUERY_KEY] });
       showSuccess('Hábito excluído!');
