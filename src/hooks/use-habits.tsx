@@ -279,7 +279,7 @@ export const useHabits = () => {
         showError(err.message);
       } else {
         showError(`Erro ao concluir hábito: ${err.message}`);
-      },
+      }
     },
   });
   
