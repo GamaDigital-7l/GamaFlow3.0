@@ -7,6 +7,7 @@ import { Lead, LeadStatus, LeadOrigin, LeadContactInfo } from '@/types/crm';
 import { Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { format } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
 
 interface LeadFormProps {
   initialData?: Lead;
@@ -26,7 +27,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({ initialData, onSubmit, onCan
   const [phone, setPhone] = useState(initialData?.contactInfo.phone || '');
   const [email, setEmail] = useState(initialData?.contactInfo.email || '');
   const [instagram, setInstagram] = useState(initialData?.contactInfo.instagram || '');
-  const [observations, setObservations] = useState('');
+  const [observations, setObservations] = '';
   const [nextActionDate, setNextActionDate] = useState(initialData?.nextActionDate ? format(initialData.nextActionDate, 'yyyy-MM-dd') : '');
 
   useEffect(() => {
