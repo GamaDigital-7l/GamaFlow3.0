@@ -278,7 +278,12 @@ export function useTaskStore() {
                 const reminderNotificationKey = `task-reminder-${task.id}`;
                 
                 if (!localStorage.getItem(reminderNotificationKey)) {
-                    notifyTaskAction(task.title, 'LEMBRETE', task.category, `Faltam ${timeDifference} minutos para o vencimento.`);
+                    notifyTaskAction(
+                        task.title, 
+                        'LEMBRETE', 
+                        task.category, 
+                        `Faltam ${timeDifference} minutos para o vencimento.`
+                    );
                     localStorage.setItem(reminderNotificationKey, 'true');
                 }
             }

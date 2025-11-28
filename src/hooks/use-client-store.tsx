@@ -275,7 +275,6 @@ export function useClientStore() {
 
   // --- Funções de Mutação (CRUD) ---
 
-  // Mutação para adicionar/atualizar clientes
   const clientMutation = useMutation({
     mutationFn: upsertClientToDB,
     onSuccess: (newClient) => {
@@ -291,7 +290,6 @@ export function useClientStore() {
     },
   });
 
-  // Mutação para deletar clientes
   const deleteClientMutation = useMutation({
     mutationFn: deleteClientData,
     onSuccess: () => {
@@ -303,7 +301,6 @@ export function useClientStore() {
     },
   });
 
-  // Mutação para adicionar/atualizar/deletar posts
   const postMutation = useMutation({
     mutationFn: async (action: { type: 'add' | 'update' | 'delete', clientId: string, payload: any }) => {
       const client = getClientById(action.clientId);

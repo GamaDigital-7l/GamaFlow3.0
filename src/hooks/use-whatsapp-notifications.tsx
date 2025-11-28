@@ -32,6 +32,8 @@ const sendNotification = async (config: WhatsappConfig, number: string, message:
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'apikey': config.apiKey,
+                
             },
             body: JSON.stringify({
                 apiKey: config.apiKey,
@@ -41,10 +43,14 @@ const sendNotification = async (config: WhatsappConfig, number: string, message:
             }),
         });
 
-        if (!response.ok) {
-            const errorResult = await response.json();
-            console.error("Failed to send WhatsApp notification:", errorResult);
-            // Não mostramos um toast de erro para o usuário final, apenas logamos.
+        const result = await response.json()
+
+        if (!response.ok || result.status === 'error') {
+            console.error("Evolution API Error:", result);
+            return new Response(JSON.stringify({ error: result.message || 'Failed to send WhatsApp message.' }), {
+                status: response.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
         }
     } catch (error) {
         console.error("Network error sending WhatsApp notification:", error);

@@ -2,7 +2,7 @@ import { useAppSettings } from './use-app-settings';
 import { useCallback } from 'react';
 import { showError } from '@/utils/toast';
 
-const TELEGRAM_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/send-telegram-notification';
+const TELEGRAM_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/send-telegram-notification';
 
 interface TelegramConfig {
     botToken: string;
@@ -43,7 +43,7 @@ const sendNotification = async (config: TelegramConfig, message: string) => {
 export const useTelegramNotifications = () => {
     const { settings } = useAppSettings();
     
-    // 1. Notificação de Clientes (Aprovação, Edição, Feedback, Link Gerado)
+    // 1. Notificação de Clientes (Aprovação, Edição, Link Gerado)
     const notifyClientAction = useCallback((clientName: string, action: string, postTitle: string, details?: string) => {
         const config = settings.clientTelegramConfig;
         

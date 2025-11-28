@@ -206,7 +206,7 @@ const calculateStreaks = (habitId: string, completions: HabitCompletion[]) => {
                 tempStreak++;
                 tempLastDate = prevDate;
             } else {
-                break;
+                break; 
             }
         }
         return tempStreak + 1;
@@ -258,7 +258,7 @@ export const useHabits = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteHabitFromDB,
+    mutationFn: deleteTaskFromDB,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [HABITS_QUERY_KEY] });
       showSuccess('Hábito excluído!');
@@ -279,7 +279,7 @@ export const useHabits = () => {
         showError(err.message);
       } else {
         showError(`Erro ao concluir hábito: ${err.message}`);
-      }
+      },
     },
   });
   

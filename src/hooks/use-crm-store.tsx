@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useClientStore } from './use-client-store'; // Para integração
 import { differenceInDays } from 'date-fns';
 import { useTelegramNotifications } from './use-telegram-notifications'; // Importando o hook de notificação
+import { useWhatsappNotifications } from './use-whatsapp-notifications'; // NOVO
 
 const LEADS_QUERY_KEY = 'crmLeads';
 const CONVERT_LEAD_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/convert-lead-to-client';
