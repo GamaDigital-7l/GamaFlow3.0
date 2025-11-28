@@ -1,0 +1,16 @@
+import React, { useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Plus, Loader2, Trash2, Edit, Copy, LayoutDashboard, ClipboardList } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useBriefings } from '@/hooks/use-briefings';
+import { BriefingForm } from '@/types/briefing';
+import  OnboardingBlockEditor  from '@/components/onboarding/OnboardingBlockEditor';
+import { withRole } from '@/components/withRole';
+import { useClientStore } from '@/hooks/use-client-store';
+import { showSuccess } from '@/utils/toast';
+import { cn } from '@/lib/utils';
+import { OnboardingBlockRenderer } from '@/components/onboarding/OnboardingBlockRenderer';
+import { Input } from '@/components/ui/input';
+import { OnboardingBlock, PlaybookFile, BriefingResponseEntry, OnboardingBlockType } from '@/types/playbook';
