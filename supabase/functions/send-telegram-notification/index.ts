@@ -42,7 +42,7 @@ serve(async (req) => {
 
     const result = await response.json()
 
-    if (!response.ok) {
+    if (!response.ok || result.status === 'error') {
       console.error("Telegram API Error:", result);
       return new Response(JSON.stringify({ error: result.description || 'Failed to send message to Telegram.' }), {
         status: response.status,

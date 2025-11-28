@@ -30,10 +30,14 @@ const sendNotification = async (config: TelegramConfig, message: string) => {
             }),
         });
 
-        if (!response.ok) {
-            const errorResult = await response.json();
-            console.error("Failed to send Telegram notification:", errorResult);
-            // Não mostramos um toast de erro para o usuário final, apenas logamos.
+        const result = await response.json()
+
+        if (!response.ok || result.status === 'error') {
+            console.error("Telegram API Error:", result);
+            return new Response(JSON.stringify({ error: result.message || 'Failed to send WhatsApp message.' }), {
+                status: response.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
         }
     } catch (error) {
         console.error("Network error sending Telegram notification:", error);
