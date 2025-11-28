@@ -19,12 +19,14 @@ export const usePlaybookUpload = (clientId: string) => {
       // 1. Fetch Nextcloud credentials from the API endpoint
       const credentialsResponse = await fetch('/api/nextcloud-upload-credentials', {
         headers: {
-          'Authorization': `Bearer YOUR_SECRET_API_KEY`, // Replace with your actual API key
+          'Authorization': `Bearer ${import.meta.env.NEXT_PUBLIC_SECRET_API_KEY}`, // Use NEXT_PUBLIC_
         },
       });
 
       if (!credentialsResponse.ok) {
-        throw new Error('Failed to fetch Nextcloud upload credentials.');
+        const errorText = await credentialsResponse.text();
+        console.error("Failed to fetch Nextcloud upload credentials:", errorText);
+        throw new Error(`Failed to fetch Nextcloud upload credentials: ${credentialsResponse.statusText}`);
       }
 
       const credentials = await credentialsResponse.json();
@@ -40,6 +42,8 @@ export const usePlaybookUpload = (clientId: string) => {
       });
 
       if (!uploadResponse.ok) {
+        const uploadErrorText = await uploadResponse.text();
+        console.error("Failed to upload file to Nextcloud:", uploadErrorText);
         throw new Error(`Failed to upload file to Nextcloud: ${uploadResponse.statusText}`);
       }
 
