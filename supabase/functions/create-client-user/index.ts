@@ -83,25 +83,23 @@ serve(async (req) => {
       })
     }
 
-    // 4. Atualização do Perfil (Role e Client ID)
     const newUserId = newUser.user.id;
-    
-    // Nota: O trigger handle_new_user já deve ter criado o perfil com role 'user'.
-    // Aqui, atualizamos para 'client' e vinculamos o client_id.
-    const { error: profileUpdateError } = await supabaseAdmin
+
+    // 4. Criação do Perfil (agora feito aqui para garantir a criação)
+    const { error: profileCreateError } = await supabaseAdmin
       .from('profiles')
-      .update({ 
-        role: 'client', 
+      .insert({
+        id: newUserId,
+        role: 'client',
         client_id: client_id,
         first_name: 'Cliente',
         last_name: 'Portal',
-      })
-      .eq('id', newUserId)
-      
-    if (profileUpdateError) {
-      // Se falhar ao atualizar o perfil, deleta o usuário recém-criado para evitar lixo
+      });
+
+    if (profileCreateError) {
+      // Se falhar ao criar o perfil, deleta o usuário recém-criado para evitar lixo
       await supabaseAdmin.auth.admin.deleteUser(newUserId);
-      return new Response(JSON.stringify({ error: `Failed to link profile: ${profileUpdateError.message}` }), {
+      return new Response(JSON.stringify({ error: `Failed to create profile: ${profileCreateError.message}` }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
