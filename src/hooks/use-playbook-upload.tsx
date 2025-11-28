@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
-import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
 export const usePlaybookUpload = (clientId: string) => {
@@ -14,26 +13,38 @@ export const usePlaybookUpload = (clientId: string) => {
     
     setIsUploading(true);
     try {
-      const fileExtension = file.name.split('.').pop();
-      const filePath = `${clientId}/${uuidv4()}.${fileExtension}`;
-      
-      const { data, error } = await supabase.storage
-        .from('playbook-files') // Certifique-se de que este bucket existe no Supabase
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+      const filename = `${clientId}/${uuidv4()}-${file.name}`;
+      const uploadUrl = `${process.env.NEXTCLOUD_UPLOAD_URL}/${filename}`;
 
-      if (error) throw new Error(error.message);
-      
-      const { data: publicUrlData } = supabase.storage
-        .from('playbook-files')
-        .getPublicUrl(filePath);
-        
-      if (!publicUrlData.publicUrl) throw new Error("Não foi possível obter a URL pública do arquivo.");
-      
+      // 1. Fetch Nextcloud credentials from the API endpoint
+      const credentialsResponse = await fetch('/api/nextcloud-upload-credentials', {
+        headers: {
+          'Authorization': `Bearer YOUR_SECRET_API_KEY`, // Replace with your actual API key
+        },
+      });
+
+      if (!credentialsResponse.ok) {
+        throw new Error('Failed to fetch Nextcloud upload credentials.');
+      }
+
+      const credentials = await credentialsResponse.json();
+
+      // 2. Perform the WebDAV upload using the fetched credentials
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Basic ${btoa(`${credentials.username}:${credentials.password}`)}`,
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Failed to upload file to Nextcloud: ${uploadResponse.statusText}`);
+      }
+
       showSuccess(`Upload de '${file.name}' concluído!`);
-      return { url: publicUrlData.publicUrl, type: file.type };
+      return { url: uploadUrl, type: file.type };
     } catch (error) {
       showError(`Falha no upload: ${error.message}`);
       return null;

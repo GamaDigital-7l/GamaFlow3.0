@@ -48,38 +48,6 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
     }
   };
   
-  const uploadLogo = async (file: File, clientName: string): Promise<string | undefined> => {
-    setIsUploading(true);
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${clientName.replace(/\s/g, '_')}-${uuidv4()}.${fileExtension}`;
-    const filePath = `logos/${fileName}`;
-    
-    try {
-      const { error: uploadError } = await supabase.storage
-        .from('client-logos')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw new Error(uploadError.message);
-      }
-      
-      const { data: publicUrlData } = supabase.storage
-        .from('client-logos')
-        .getPublicUrl(filePath);
-        
-      return publicUrlData.publicUrl;
-      
-    } catch (error) {
-      showError(`Falha no upload do logo: ${error.message}`);
-      return undefined;
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -90,21 +58,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
     
     const goal = parseInt(monthlyPostGoal);
     if (isNaN(goal) || goal < 0) {
-        showError('A meta mensal deve ser um número positivo.');
+        showError('A meta mensal deve ser um número válido.');
         return;
     }
     
     let finalLogoUrl = logoUrl;
-    
-    // Se houver um arquivo selecionado, faz o upload primeiro
-    if (selectedFile) {
-        const uploadedUrl = await uploadLogo(selectedFile, name.trim());
-        if (!uploadedUrl) {
-            // Se o upload falhar, interrompe a submissão
-            return;
-        }
-        finalLogoUrl = uploadedUrl;
-    }
 
     const newClient: ClientFormData = {
       name: name.trim(),
