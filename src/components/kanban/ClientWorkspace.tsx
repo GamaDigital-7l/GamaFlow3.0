@@ -30,7 +30,14 @@ interface ClientWorkspaceProps {
 
 // Gera uma lista de meses (ex: 6 meses passados, 6 meses futuros)
 const generateMonthOptions = (currentMonthYear: string) => {
-  const options: { value: string; label: string }[] = [];
+  const options: { value: string; label: string }[] = [
+    { value: 'todayHigh', label: 'Hoje — Prioridade Alta' },
+    { value: 'todayMedium', label: 'Hoje — Prioridade Média' },
+    { value: 'thisWeekLow', label: 'Esta Semana — Baixa' },
+    { value: 'woeTasks', label: 'WOE Comunicação' },
+    { value: 'clientTasks', label: 'Tarefas de Cliente' },
+    { value: 'agencyTasks', label: 'Gama Creative (Agência)' },
+  ];
   let date = parseISO(currentMonthYear + '-01');
 
   // 6 meses passados + Mês atual
@@ -104,8 +111,8 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
     setIsEditDialogOpen(true);
   };
 
-  const handleSavePost = (updatedPost: Post) => {
-    updatePost(clientId, updatedPost);
+  const handleSavePost = (post: Post) => {
+    updatePost(clientId, post);
     setIsEditDialogOpen(false);
   };
 
@@ -180,9 +187,9 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
               <Mail className="h-4 w-4 mr-1" /> {client.email}
             </a>
           )}
-          {client.whatsappGroupId && (
+          {client.whatsappNumber && (
             <span className="flex items-center">
-              <MessageCircle className="h-4 w-4 mr-1" /> Grupo ID: {client.whatsappGroupId}
+              <MessageCircle className="h-4 w-4 mr-1" /> Grupo ID: {client.whatsappNumber}
             </span>
           )}
         </div>
@@ -196,9 +203,7 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
           </SelectTrigger>
           <SelectContent>
             {monthOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -254,7 +259,7 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
           <DialogHeader>
             <DialogTitle>Adicionar Novo Post ({format(parseISO(selectedMonthYear), 'MMMM/yyyy', { locale: ptBR })})</DialogTitle>
           </DialogHeader>
-          <PostForm onCancel={() => setIsDialogOpen(false)} onSubmit={handleCreatePost} />
+          <PostForm onCancel={() => setIsDialogOpen(false)} onSubmit={handleCreatePost} clientId={clientId} />
         </DialogContent>
       </Dialog>
 
@@ -262,7 +267,7 @@ export const ClientWorkspace: React.FC<ClientWorkspaceProps> = ({ clientId }) =>
         <PostEditDialog
           isOpen={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
-          post={selectedPost}
+          task={selectedPost}
           onSave={handleSavePost}
           onDelete={handleDeletePost}
         />
