@@ -21,26 +21,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 type PlaybookSection = 
   'briefing' | 'pending_approval' | 'approved_materials' | 
   'visual_identity' | 'useful_links' | 'logins' | 'demand_history' | 
-  'request_demand' | 'contracts' | 'media' | 'onboarding'; // Adicionado 'onboarding'
+  'request_demand' | 'contracts' | 'media'; // Adicionado 'onboarding'
 
 interface PlaybookLayoutProps {
   clientId: string;
 }
 
-// Componente de Onboarding (para clientes)
-const ClientOnboardingPage: React.FC<{ clientId: string }> = ({ clientId }) => {
-  // Importa o componente OnboardingPage diretamente
-  const OnboardingPage = React.lazy(() => import('../../pages/OnboardingPage'));
-  return (
-    <React.Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}>
-      <OnboardingPage />
-    </React.Suspense>
-  );
-};
-
-
 const sectionComponents: Record<PlaybookSection, React.FC<{ clientId: string }>> = {
-  onboarding: ClientOnboardingPage, // Usando o novo componente
   pending_approval: PendingApprovalPage,
   approved_materials: ApprovedMaterialsPage,
   request_demand: RequestDemandPage,
@@ -54,7 +41,6 @@ const sectionComponents: Record<PlaybookSection, React.FC<{ clientId: string }>>
 };
 
 const navItems: { id: PlaybookSection; label: string; icon: React.ElementType }[] = [
-  { id: 'onboarding', label: 'Checklist Inicial', icon: ClipboardList }, // Novo item de navegação
   { id: 'pending_approval', label: 'Material para Aprovação', icon: AlertTriangle },
   { id: 'approved_materials', label: 'Materiais Aprovados', icon: CheckCircle },
   { id: 'request_demand', label: 'Solicitar Nova Demanda', icon: Plus },
@@ -68,8 +54,8 @@ const navItems: { id: PlaybookSection; label: string; icon: React.ElementType }[
 ];
 
 export const PlaybookLayout: React.FC<PlaybookLayoutProps> = ({ clientId }) => {
-  // Definindo 'onboarding' como a seção inicial
-  const [activeSection, setActiveSection] = useState<PlaybookSection>('onboarding');
+  // Definindo 'pending_approval' como a seção inicial
+  const [activeSection, setActiveSection] = useState<PlaybookSection>('pending_approval');
   const [isPlaybookSidebarOpen, setIsPlaybookSidebarOpen] = useState(false); 
   const { getClientById, isLoading } = useClientStore();
   const isMobile = useIsMobile(); 
