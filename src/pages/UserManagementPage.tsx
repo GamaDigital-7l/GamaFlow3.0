@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2, Trash2, User, Edit } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Trash2, User, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUserManagement, UserProfile } from '@/hooks/use-user-management';
@@ -17,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 const UserManagementPage: React.FC = () => {
   const { users, isLoading, createUser, updateUser, deleteUser, isCreating, isUpdating } = useUserManagement();
@@ -25,6 +29,20 @@ const UserManagementPage: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // Define o tamanho da página
+  const totalPages = Math.ceil(users.length / pageSize); // Calcula o número total de páginas
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Calcula os usuários para a página atual
+  const paginatedUsers = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return users.slice(startIndex, endIndex);
+  }, [users, currentPage, pageSize]);
 
   const handleCreateUser = (data: { email: string, password: string, client_id: string }) => {
     createUser(data, {
@@ -77,9 +95,6 @@ const UserManagementPage: React.FC = () => {
       <p className="text-muted-foreground">Crie e gerencie os acessos dos clientes ao Portal.</p>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Usuários ({users.length})</CardTitle>
-        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -91,7 +106,7 @@ const UserManagementPage: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map(user => (
+              {paginatedUsers.map(user => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.email}</TableCell>
                   <TableCell>
@@ -128,6 +143,34 @@ const UserManagementPage: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+      
+      {/* Componente de Paginação */}
+      <Pagination>
+        <PaginationContent>
+          <PaginationPrevious
+            href="#"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          />
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <PaginationItem key={page} active={page === currentPage}>
+              <PaginationLink
+                href="#"
+                onClick={() => handlePageChange(page)}
+                isCurrent={page === currentPage}
+                aria-current={page === currentPage ? "page" : undefined}
+              >
+                {page}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          <PaginationNext
+            href="#"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          />
+        </PaginationContent>
+      </Pagination>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[450px]">

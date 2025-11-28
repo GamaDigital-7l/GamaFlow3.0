@@ -23,7 +23,7 @@ const DELETE_USER_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/funct
 
 
 // Função para buscar todos os usuários (incluindo e-mail) via Edge Function
-const fetchAllUserProfiles = async (): Promise<UserProfile[]> => {
+const fetchAllUserProfiles = async (page: number, pageSize: number): Promise<UserProfile[]> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Sessão de admin necessária.");
 
@@ -33,6 +33,7 @@ const fetchAllUserProfiles = async (): Promise<UserProfile[]> => {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
     },
+    body: JSON.stringify({ page, pageSize }), // Passa os parâmetros de paginação
   });
 
   const result = await response.json();
@@ -118,10 +119,11 @@ export const useUserManagement = () => {
   const { userRole } = useSession();
   
   const isAdmin = userRole === 'admin';
-
+  
+  const pageSize = 10; // Define o tamanho da página
   const { data: users = [], isLoading } = useQuery<UserProfile[], Error>({
     queryKey: [USERS_QUERY_KEY],
-    queryFn: fetchAllUserProfiles,
+    queryFn: () => fetchAllUserProfiles(1, pageSize), // Página inicial = 1
     enabled: isAdmin,
     staleTime: 3600000, // 1 hora de cache
   });

@@ -53,8 +53,16 @@ serve(async (req) => {
     })
   }
 
-  // 2. Busca de todos os usuários Auth
-  const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+  // 2. Paginação
+  const { page = 1, pageSize = 10 } = await req.json();
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+
+  // 3. Busca de todos os usuários Auth
+  const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+    page: page,
+    perPage: pageSize,
+  });
 
   if (authError) {
     return new Response(JSON.stringify({ error: authError.message }), {
@@ -63,10 +71,11 @@ serve(async (req) => {
     })
   }
   
-  // 3. Busca de todos os perfis
+  // 4. Busca de todos os perfis
   const { data: profiles, error: profilesError } = await supabaseAdmin
     .from('profiles')
-    .select('*');
+    .select('*')
+    .range(start, end);
 
   if (profilesError) {
     return new Response(JSON.stringify({ error: profilesError.message }), {
@@ -75,7 +84,7 @@ serve(async (req) => {
     })
   }
   
-  // 4. Combina Auth Users e Profiles
+  // 5. Combina Auth Users e Profiles
   const profilesMap = new Map(profiles.map(p => [p.id, p]));
   
   const combinedUsers = authUsers.users.map(authUser => {
