@@ -43,6 +43,43 @@ export const PostForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
     }
   };
 
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      // Usa a hora atual do estado dueTime para definir a hora na nova data
+      const [hours, minutes] = dueTime.split(':').map(Number);
+      
+      const newDate = new Date(date);
+      // Se dueTime for vazio ou inválido, usa o final do dia (23:59)
+      if (isNaN(hours) || isNaN(minutes)) {
+        newDate.setHours(23, 59, 59, 999);
+      } else {
+        newDate.setHours(hours, minutes, 0, 0);
+      }
+      
+      setDueDate(newDate);
+    } else {
+      setDueDate(undefined);
+      setDueTime(''); // Limpa a hora se não houver data
+    }
+  };
+  
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    setDueTime(newTime);
+    
+    if (dueDate && newTime) {
+        const [hours, minutes] = newTime.split(':').map(Number);
+        const newDate = new Date(dueDate);
+        newDate.setHours(hours, minutes, 0, 0);
+        setDueDate(newDate);
+    } else if (dueDate && !newTime) {
+        // Se o usuário apagar a hora, define para o final do dia (se houver data)
+        const newDate = new Date(dueDate);
+        newDate.setHours(23, 59, 59, 999);
+        setDueDate(newDate);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
