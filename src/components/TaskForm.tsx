@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ interface PostFormProps {
   post?: Post;
   onSubmit: (post: Omit<Post, 'id' | 'approvalLink'>) => void;
   onCancel: () => void;
+  clientId: string; // Adding clientId prop
 }
 
 // Função auxiliar para formatar a hora inicial (HH:mm)
@@ -25,7 +26,7 @@ const getInitialTime = (date?: Date): string => {
     return format(date, 'HH:mm');
 };
 
-export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) => {
+export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel, clientId }) => {
   const [title, setTitle] = useState(post?.title || '');
   const [description, setDescription] = useState(post?.description || '');
   const [dueDate, setDueDate] = useState<Date | undefined>(post?.dueDate || undefined);
@@ -33,7 +34,7 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
   const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // Novo estado para o arquivo selecionado
   const [status, setStatus] = useState<KanbanColumnId>(post?.status || 'Produção');
-  const { uploadFile, isUploading } = usePlaybookUpload(''); // Usando o hook de upload
+  const { uploadFile, isUploading } = usePlaybookUpload(clientId); // Usando o hook de upload
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,7 +50,7 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
       const [hours, minutes] = dueTime.split(':').map(Number);
       
       const newDate = new Date(date);
-      // Se dueTime for vazio ou inválido, usa o final do day (23:59)
+      // Se dueTime for vazio ou inválido, usa o final do dia (23:59)
       if (isNaN(hours) || isNaN(minutes)) {
         newDate.setHours(23, 59, 59, 999);
       } else {
@@ -111,7 +112,7 @@ export const TaskForm: React.FC<PostFormProps> = ({ post, onSubmit, onCancel }) 
         finalDueDate = new Date(dueDate);
         finalDueDate.setHours(hours, minutes, 0, 0);
     } else {
-        // Se a hora não for definida, define para o final do dia
+        // Se a hora não foi definida, define para o final do dia
         finalDueDate = new Date(dueDate);
         finalDueDate.setHours(23, 59, 59, 999);
     }
