@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { USERS_QUERY_KEY } from './use-user-management'; // Importando a chave de query
 
-const FORCE_ADMIN_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/force-admin';
+const FORCE_ADMIN_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/force-admin';
 
 const callForceAdmin = async (): Promise<void> => {
   const { data: { session } } = await supabase.auth.getSession();

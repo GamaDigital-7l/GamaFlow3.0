@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { useTelegramNotifications } from './use-telegram-notifications'; // Importando o hook de notificação
 
 const AI_SUMMARY_QUERY_KEY = 'aiDailySummary';
-const AI_SUMMARY_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/ai-summary-proxy';
+const AI_SUMMARY_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/ai-summary-proxy';
 
 // Função para buscar o resumo da IA
 const fetchAiSummary = async (
@@ -53,7 +53,7 @@ const fetchAiSummary = async (
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
+    return data.summary;
 }
 
 export const useAiSummary = () => {

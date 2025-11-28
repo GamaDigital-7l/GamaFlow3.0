@@ -15,11 +15,11 @@ export interface UserProfile {
 }
 
 // URL da Edge Function para listar usuários
-const LIST_USERS_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/list-users';
+const LIST_USERS_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/list-users';
 // URL da Edge Function para criar usuários
-const CREATE_USER_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/create-client-user';
+const CREATE_USER_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/create-client-user';
 // URL da Edge Function para deletar usuários
-const DELETE_USER_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/delete-client-user';
+const DELETE_USER_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/delete-client-user';
 
 
 // Função para buscar todos os usuários (incluindo e-mail) via Edge Function
@@ -72,7 +72,7 @@ const updateUserInDB = async (data: { id: string, email: string, role: string, c
     if (!session) throw new Error("Sessão de admin necessária.");
     
     // Edge Function URL para atualização (vamos criar uma nova)
-    const UPDATE_USER_FUNCTION_URL = 'https://pynxuncunsicifxvloms.supabase.co/functions/v1/update-client-user';
+    const UPDATE_USER_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/update-client-user';
     
     const response = await fetch(UPDATE_USER_FUNCTION_URL, {
         method: 'POST',
@@ -168,5 +168,6 @@ export const useUserManagement = () => {
     deleteUser: deleteMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };
