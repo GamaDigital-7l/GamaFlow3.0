@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link as LinkIcon, Folder, Plus, Loader2, Trash2, Edit } from 'lucide-react';
+import { Link as LinkIcon, Folder, Plus, Loader2, Trash2, Edit, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePlaybookContent } from '@/hooks/use-playbook-content';
 import { useSession } from '@/components/SessionContextProvider';
 import { showSuccess, showError } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { usePlaybookUpload } from '@/hooks/use-playbook-upload'; // Importando o hook de upload
 
 interface MediaPageProps {
   clientId: string;
@@ -33,7 +34,9 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
   const [editingLink, setEditingLink] = useState<MediaLink | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
-  const [isPrimary, setIsPrimary] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // Novo estado para o arquivo selecionado
+  const [isUploading, setIsUploading] = useState(false); // Novo estado para controlar o upload
+  const { uploadFile } = usePlaybookUpload(clientId); // Usando o hook de upload
 
   const links: MediaLink[] = useMemo(() => {
     return content?.content?.links || [];
@@ -46,35 +49,49 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
         setEditingLink(link);
         setNewTitle(link.title);
         setNewUrl(link.url);
-        setIsPrimary(link.isPrimary);
     } else {
         setEditingLink(null);
         setNewTitle('');
         setNewUrl('');
-        setIsPrimary(false);
     }
     setIsDialogOpen(true);
   };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setNewUrl(URL.createObjectURL(file)); // Cria um URL local para a imagem
+    }
+  };
 
-  const handleSaveLink = (e: React.FormEvent) => {
+  const handleSaveLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newUrl.trim()) {
+    if (!newTitle.trim() && !newUrl.trim() && !selectedFile) {
         showError('Título e URL são obrigatórios.');
         return;
     }
     
-    let updatedLinks = links;
+    let finalUrl = newUrl;
     
-    // 1. Garante que apenas um seja primário
-    if (isPrimary) {
-        updatedLinks = updatedLinks.map(l => ({ ...l, isPrimary: false }));
+    if (selectedFile) {
+        // Se um arquivo foi selecionado, faça o upload
+        const uploadResult = await uploadFile(selectedFile);
+        if (uploadResult) {
+            finalUrl = uploadResult.url;
+        } else {
+            showError('Falha ao fazer upload do arquivo.');
+            return;
+        }
     }
+
+    let updatedLinks = links;
     
     if (editingLink) {
         // Update
         updatedLinks = updatedLinks.map(l => 
             l.id === editingLink.id 
-                ? { ...l, title: newTitle.trim(), url: newUrl.trim(), isPrimary } 
+                ? { ...l, title: newTitle.trim(), url: finalUrl.trim(), isPrimary: false } 
                 : l
         );
     } else {
@@ -82,8 +99,8 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
         const newLink: MediaLink = {
             id: Date.now().toString(),
             title: newTitle.trim(),
-            url: newUrl.trim(),
-            isPrimary,
+            url: finalUrl.trim(),
+            isPrimary: false,
         };
         updatedLinks = [...updatedLinks, newLink];
     }
@@ -99,10 +116,6 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
     }
   };
 
-  if (isLoading) {
-    return <div className="text-center p-8"><Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" /></div>;
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -115,7 +128,7 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
             size="sm" 
             className="bg-dyad-500 hover:bg-dyad-600"
             onClick={() => handleOpenDialog()}
-            disabled={isSaving}
+            disabled={isSaving || isUploading}
           >
             <Plus className="h-4 w-4 mr-2" /> Adicionar Link
           </Button>
@@ -129,41 +142,37 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
       <Card>
         <CardHeader><CardTitle>Todos os Links ({links.length})</CardTitle></CardHeader>
         <CardContent>
-            <div className="space-y-3">
-                {links.length === 0 ? (
-                    <p className="text-muted-foreground text-center">Nenhum link de mídia cadastrado.</p>
-                ) : (
-                    links.map(link => (
-                        <div key={link.id} className={cn(
-                            "p-3 border rounded-lg flex justify-between items-center",
-                            link.isPrimary && "bg-dyad-50/50 dark:bg-dyad-950/50 border-dyad-500/50"
-                        )}>
-                            <div className="min-w-0 pr-4">
-                                <h4 className="font-semibold truncate flex items-center space-x-2">
-                                    <LinkIcon className="h-4 w-4 text-dyad-500 flex-shrink-0" />
-                                    <span>{link.title}</span>
-                                    {link.isPrimary && <Badge className="bg-dyad-500/20 text-dyad-500 hover:bg-dyad-500/30 text-xs">Principal</Badge>}
-                                </h4>
-                                <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate block">
-                                    {link.url}
-                                </a>
-                            </div>
-                            <div className="flex space-x-2 flex-shrink-0">
-                                {canManage && (
-                                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(link)} disabled={isSaving}>
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {canManage && (
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link.id)} disabled={isSaving}>
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
+          <div className="space-y-3">
+            {links.length === 0 ? (
+              <p className="text-muted-foreground text-center">Nenhum link de mídia cadastrado.</p>
+            ) : (
+              links.map(link => (
+                <div key={link.id} className="p-3 border rounded-lg flex justify-between items-center">
+                  <div className="min-w-0 pr-4">
+                    <h4 className="font-semibold truncate flex items-center space-x-2">
+                      <LinkIcon className="h-4 w-4 text-dyad-500 flex-shrink-0" />
+                      <span>{link.title}</span>
+                    </h4>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate block">
+                      {link.url}
+                    </a>
+                  </div>
+                  <div className="flex space-x-2 flex-shrink-0">
+                    {canManage && (
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(link)} disabled={isSaving || isUploading}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canManage && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link.id)} disabled={isSaving || isUploading}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -175,27 +184,50 @@ const MediaPage: React.FC<MediaPageProps> = ({ clientId }) => {
           </DialogHeader>
           <form onSubmit={handleSaveLink} className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Título (Ex: Google Drive)</Label>
-              <Input id="title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required disabled={isSaving} />
+              <Label htmlFor="title">Título</Label>
+              <Input
+                id="title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Ex: Google Drive"
+                required
+                disabled={isSaving || isUploading}
+              />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="url">URL (Drive, Dropbox, etc.)</Label>
-              <Input id="url" type="url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} required disabled={isSaving} />
-            </div>
-            <div className="flex items-center space-x-2">
-                <input
-                    type="checkbox"
-                    id="isPrimary"
-                    checked={isPrimary}
-                    onChange={(e) => setIsPrimary(e.target.checked)}
-                    className="h-4 w-4 text-dyad-500 border-gray-300 rounded focus:ring-dyad-500"
-                    disabled={isSaving}
+              <Label htmlFor="url">URL</Label>
+              <div className="flex space-x-2">
+                <Input
+                  id="url"
+                  type="url"
+                  value={newUrl}
+                  onChange={(e) => setNewUrl(e.target.value)}
+                  placeholder="https://..."
+                  required
+                  disabled={isSaving || isUploading}
+                  className="flex-grow"
                 />
-                <Label htmlFor="isPrimary">Link Principal (Exibir Pré-visualização)</Label>
+                <Input
+                  id="fileUpload"
+                  type="file"
+                  onChange={handleFileChange}
+                  disabled={isSaving || isUploading}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => document.getElementById('fileUpload')?.click()}
+                  disabled={isSaving || isUploading}
+                >
+                  <Upload className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={isSaving} className="bg-dyad-500 hover:bg-dyad-600">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Salvar Link'}
+              <Button type="submit" disabled={isSaving || isUploading} className="bg-dyad-500 hover:bg-dyad-600">
+                {(isSaving || isUploading) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Salvar Link'}
               </Button>
             </DialogFooter>
           </form>
