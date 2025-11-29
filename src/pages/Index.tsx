@@ -178,28 +178,7 @@ const Index = () => {
               ))}
             </div>
             <ScrollBar orientation="horizontal" />
-          
-          {/* Controles de Scroll (Desktop) */}
-          {!isMobile && overdue.length > 3 && (
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between pointer-events-none">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="z-10 h-8 w-8 rounded-full bg-card/80 hover:bg-card pointer-events-auto shadow-md -ml-4"
-                onClick={() => scrollOverdue('left')}
-              >
-                <ChevronLeft className="h-5 w-5 text-dyad-500" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="z-10 h-8 w-8 rounded-full bg-card/80 hover:bg-card pointer-events-auto shadow-md -mr-4"
-                onClick={() => scrollOverdue('right')}
-              >
-                <ChevronRight className="h-5 w-5 text-dyad-500" />
-              </Button>
-            </div>
-          )}
+          </ScrollArea>
         </div>
       </Card>
     ) : null
