@@ -12,7 +12,7 @@ import { showSuccess, showError } from '@/utils/toast';
 
 interface TemplateFormProps {
   initialData?: TaskTemplate;
-  onSubmit: (template: TaskTemplate | Omit<TaskTemplate, 'id' | 'user_id' | 'created_at'>> => void;
+  onSubmit: (template: Omit<TaskTemplate, 'id' | 'user_id' | 'created_at'> | TaskTemplate) => void;
   onCancel: () => void;
   isSubmitting: boolean;
 }
