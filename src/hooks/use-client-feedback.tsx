@@ -30,7 +30,6 @@ export const useClientFeedback = () => {
   const { data: feedback = [], isLoading, error } = useQuery<ClientFeedback[], Error>({
     queryKey: [FEEDBACK_QUERY_KEY],
     queryFn: fetchClientFeedback,
-    staleTime: 300000, // 5 minutes of cache
   });
 
   if (error) {

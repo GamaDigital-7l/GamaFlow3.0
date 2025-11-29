@@ -71,7 +71,6 @@ export const useProposals = () => {
   const { data: proposals = [], isLoading } = useQuery<SalesProposal[], Error>({
     queryKey: [PROPOSALS_QUERY_KEY],
     queryFn: fetchProposals,
-    staleTime: 300000, // 5 minutes of cache
   });
 
   const upsertMutation = useMutation({

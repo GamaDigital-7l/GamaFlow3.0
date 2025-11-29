@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskCategory, TaskStatus, TaskPriority, TaskTemplate, Habit, TaskType, DayOfWeek } from '@/types/task';
-import { showSuccess, showError } from '@/utils/toast';
 import { isTaskOverdue } from '@/utils/date';
+import { showSuccess, showError } from '@/utils/toast';
 import { isToday, isThisWeek, isFuture, format, getDay, isSameDay, isBefore, differenceInMinutes } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 import { useCallback, useMemo, useEffect } from 'react';
 import { useTelegramNotifications } from './use-telegram-notifications';
 import { useSession } from '@/components/SessionContextProvider';
@@ -183,7 +183,7 @@ export function useTaskStore() {
     queryKey: [TASKS_QUERY_KEY],
     queryFn: fetchTasks,
     enabled: !!currentUserId && !isLoadingSession,
-    staleTime: 300000, // 5 minutes of cache
+    staleTime: 5000, // Dados frescos por 5 segundos
   });
 
   // 2. Busca de Templates (para geração)
@@ -193,7 +193,7 @@ export function useTaskStore() {
       const { data } = await supabase.from('task_templates').select('*');
       return data as TaskTemplate[] || [];
     },
-    staleTime: 300000, // 5 minutes of cache
+    staleTime: Infinity, // Templates raramente mudam
   });
 
   // Mutação para Adicionar (usada internamente para geração)

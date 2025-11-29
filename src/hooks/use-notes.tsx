@@ -79,7 +79,6 @@ export const useNotes = () => {
   const { data: notes = [], isLoading } = useQuery<Note[], Error>({
     queryKey: [NOTES_QUERY_KEY],
     queryFn: fetchNotes,
-    staleTime: 300000, // 5 minutos de cache
   });
 
   const upsertMutation = useMutation({

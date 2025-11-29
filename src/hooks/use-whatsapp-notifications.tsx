@@ -32,7 +32,7 @@ const sendNotification = async (config: WhatsappConfig, number: string, message:
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'apikey': apiKey,
+                'apikey': config.apiKey,
                 
             },
             body: JSON.stringify({
@@ -71,7 +71,7 @@ Ação: ${action}
 Post/Tarefa: ${postTitle}
 ${details ? `Detalhes: ${details}` : ''}`;
 
-        sendNotification(config, number, message);
+        sendNotification(config, clientNumber, message);
     }, [settings.clientWhatsappConfig]);
     
     // 2. Notificação de CRM (Leads, Ações Internas)

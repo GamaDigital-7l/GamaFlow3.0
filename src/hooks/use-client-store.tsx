@@ -187,10 +187,94 @@ export function useClientStore() {
   const { data: clients = [], isLoading } = useQuery<Client[], Error>({
     queryKey: [CLIENTS_QUERY_KEY],
     queryFn: fetchClients,
-    staleTime: 300000, // 5 minutes of cache
+    staleTime: 300000, // 5 minutos de cache
   });
 
-  // 2. Mutate para adicionar, atualizar e deletar clientes
+
+  // --- Funções Auxiliares (Não Mutáveis) ---
+
+  const getClientById = useCallback((clientId: string) => {
+    return clients.find(c => c.id === clientId);
+  }, [clients]);
+
+  const getPostById = useCallback((clientId: string, postId: string) => {
+    const client = getClientById(clientId);
+    return client?.posts.find(p => p.id === postId);
+  }, [getClientById]);
+
+  const getKanbanData = useCallback((clientId: string, monthYear: string) => {
+    const client = getClientById(clientId);
+    if (!client) return { columns: {}, columnOrder: [] as KanbanColumnId[], postsMap: {} };
+
+    const monthlyPosts = client.posts.filter(p => p.monthYear === monthYear);
+
+    const postsMap = monthlyPosts.reduce((acc, post) => {
+      acc[post.id] = post;
+      return acc;
+    }, {} as Record<string, Post>);
+
+    const columns: Record<KanbanColumnId, KanbanColumn> = columnOrder.reduce((acc, columnId) => {
+      acc[columnId] = {
+        id: columnId,
+        title: columnId,
+        postIds: monthlyPosts
+          .filter(post => post.status === columnId)
+          .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+          .map(post => post.id),
+      };
+      return acc;
+    }, {} as Record<KanbanColumnId, KanbanColumn>);
+
+    return { columns, columnOrder, postsMap };
+  }, [getClientById]);
+
+  const getAllApprovedOrPublishedPosts = useMemo(() => {
+    const approvedStatuses: KanbanColumnId[] = ['Aprovado', 'Publicado'];
+    
+    const allPosts = clients.flatMap(client => 
+      client.posts.map(post => ({
+        ...post,
+        clientName: client.name,
+      }))
+    );
+
+    return allPosts
+      .filter(post => approvedStatuses.includes(post.status))
+      .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime());
+  }, [clients]);
+  
+  const clientsWithProgress = useMemo(() => {
+    const currentMonthYear = format(new Date(), 'yyyy-MM');
+    
+    return clients.map(client => {
+      const completedPostsThisMonth = client.posts.filter(post => 
+        (post.status === 'Aprovado' || post.status === 'Publicado') && 
+        post.monthYear === currentMonthYear
+      );
+      
+      const completedCount = completedPostsThisMonth.length;
+      const goal = client.monthlyPostGoal || 0;
+      const percentage = goal > 0 ? Math.min(100, Math.round((completedCount / goal) * 100)) : 0;
+      
+      let status: 'Atingida' | 'Em Progresso' = 'Em Progresso';
+      if (completedCount >= goal && goal > 0) {
+        status = 'Atingida';
+      }
+
+      return {
+        ...client,
+        completedPostsThisMonth,
+        completedCount,
+        goal,
+        percentage,
+        progressStatus: status,
+      };
+    });
+  }, [clients]);
+
+
+  // --- Funções de Mutação (CRUD) ---
+
   const clientMutation = useMutation({
     mutationFn: upsertClientToDB,
     onSuccess: (newClient) => {
@@ -245,7 +329,7 @@ export function useClientStore() {
         
         if (newPost.status === 'Aprovação') {
             // Notificação Telegram
-            notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM HH:mm')}`);
+            notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM/yyyy')}`);
             
             // Notificação WhatsApp
             if (client.whatsappNumber) {
@@ -356,73 +440,6 @@ export function useClientStore() {
     updatePost(clientId, updatedPost);
   }, [getPostById, updatePost]);
 
-  // Função para buscar um cliente pelo ID
-  const getClientById = useCallback((clientId: string) => {
-    return clients.find(client => client.id === clientId);
-  }, [clients]);
-
-  // Função para buscar um post pelo ID
-  const getPostById = useCallback((clientId: string, postId: string) => {
-    const client = getClientById(clientId);
-    if (!client) return undefined;
-    return client.posts.find(post => post.id === postId);
-  }, [getClientById]);
-  
-  // Função para buscar todos os posts aprovados ou publicados
-  const getAllApprovedOrPublishedPosts = useCallback((clientId: string) => {
-    const client = getClientById(clientId);
-    if (!client) return [];
-    return client.posts.filter(post => post.status === 'Aprovado' || post.status === 'Publicado');
-  }, [getClientById]);
-
-  // Função para obter os dados do Kanban (colunas e ordem)
-  const getKanbanData = useCallback((clientId: string, monthYear: string) => {
-    const client = getClientById(clientId);
-    if (!client) return { columns: {}, columnOrder: [], postsMap: {} };
-
-    const postsForMonth = client.posts.filter(post => post.monthYear === monthYear);
-
-    const postsMap = postsForMonth.reduce((acc, post) => {
-      acc[post.id] = post;
-      return acc;
-    }, {} as Record<string, Post>);
-
-    const columns: Record<KanbanColumnId, KanbanColumn> = columnOrder.reduce((acc, status) => {
-      acc[status] = {
-        id: status,
-        title: status,
-        postIds: postsForMonth
-          .filter(post => post.status === status)
-          .map(post => post.id),
-      };
-      return acc;
-    }, {} as Record<KanbanColumnId, KanbanColumn>);
-
-    return { columns, columnOrder, postsMap };
-  }, [getClientById]);
-  
-  // Calcula o progresso de cada cliente
-  const clientsWithProgress = useMemo(() => {
-    return clients.map(client => {
-      const postsThisMonth = client.posts.filter(post => isSameMonth(parseISO(post.monthYear + '-01'), new Date()));
-      const completedPostsThisMonth = postsThisMonth.filter(post => post.status === 'Concluída');
-      
-      const completedCount = completedPostsThisMonth.length;
-      const goal = client.monthlyPostGoal;
-      const percentage = goal > 0 ? Math.min(100, Math.round((completedCount / goal) * 100)) : 0;
-      
-      const progressStatus = percentage >= 100 ? 'Atingida' : 'Em Progresso';
-      
-      return {
-        ...client,
-        completedPostsThisMonth,
-        completedCount,
-        goal,
-        percentage,
-        progressStatus,
-      };
-    });
-  }, [clients]);
 
   return {
     clients: clientsWithProgress,
