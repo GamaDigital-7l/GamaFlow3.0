@@ -64,26 +64,28 @@ export const AppShell: React.FC = () => {
   const finalLogoUrl = logoUrl && logoUrl.trim() !== '' ? logoUrl : '/placeholder.svg';
 
   // Calcula a margem esquerda para o conteúdo principal no desktop
-  const contentMarginClass = isMobile ? "ml-0" : "md:ml-20"; 
-  // Se o menu expandido estiver aberto no desktop, o conteúdo deve ser empurrado mais
-  const expandedMenuMargin = isSidebarOpen && !isMobile ? "md:ml-[28rem]" : contentMarginClass; // 20 (compacto) + 320 (expandido) = 340px = 21.25rem
+  // Sidebar Compacta: 80px (w-20)
+  // Sidebar Expandida: 320px (w-80)
+  const contentMarginClass = isSidebarOpen ? "md:ml-80" : "md:ml-20"; 
 
   return (
     <div className="flex min-h-screen bg-background">
       
       {/* Sidebar (Compacta no Desktop, Modal no Mobile/Expandido) */}
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsOpen} />
 
       {/* Main Content Area */}
       <div className={cn(
         "flex flex-col flex-grow transition-all duration-300 ease-in-out w-full",
-        expandedMenuMargin // Aplica a margem dinâmica
+        // Aplica a margem dinâmica apenas no desktop
+        !isMobile && contentMarginClass
       )}>
         
         {/* Header/Top Bar */}
         <header className="sticky top-0 z-30 flex items-center justify-between p-4 bg-card border-b border-border shadow-sm">
           
           <div className="flex items-center space-x-4">
+            
             {/* Menu Button (Visível para Admin/User) */}
             {(!isClient) && (
               <Button
@@ -164,7 +166,7 @@ export const AppShell: React.FC = () => {
 
         {/* Content Wrapper */}
         <main className="flex-grow p-2 md:p-4">
-          <div className="w-full max-w-[98vw] mx-auto h-full">
+          <div className="w-full mx-auto h-full">
             <Outlet />
           </div>
         </main>
