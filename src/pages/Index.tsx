@@ -23,6 +23,7 @@ import { RecentFeedbackList } from "@/components/RecentFeedbackList";
 import { ClientProgressTable } from "@/components/ClientProgressTable";
 import { GoalProgressSummary } from "@/components/goals/GoalProgressSummary";
 import { DailySummaryCard } from "@/components/DailySummaryCard";
+import { Link } from "react-router-dom"; // Adicionando a importação do Link
 
 // Novo componente para renderizar o quadro de Hábitos
 interface HabitBoardProps {
