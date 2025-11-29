@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { showSuccess, showError } from '@/utils/toast';
 import { ClientAvatar } from './ClientAvatar';
 import { Upload, Loader2 } from 'lucide-react';
+import { usePlaybookUpload } from '@/hooks/use-playbook-upload'; // Importando o hook de upload
 
 type ClientFormData = Omit<Client, 'id' | 'posts'>;
 
@@ -28,15 +29,21 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
   const [cnpj, setCnpj] = useState(client?.cnpj || '');
   const [monthlyPostGoal, setMonthlyPostGoal] = useState(client?.monthlyPostGoal?.toString() || '8');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const { uploadFile, isUploading } = usePlaybookUpload(client?.id || ''); // Usando o hook de upload
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      const tempUrl = URL.createObjectURL(file);
-      setLogoUrl(tempUrl);
-      showSuccess('Arquivo selecionado para upload. Clique em Salvar para persistir.');
+      
+      // Se um arquivo foi selecionado, faça o upload
+      const uploadResult = await uploadFile(file);
+      if (uploadResult) {
+          setLogoUrl(uploadResult.url);
+      } else {
+          showError('Falha ao fazer upload da imagem.');
+          return;
+      }
     }
   };
 
@@ -54,11 +61,9 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
       return;
     }
 
-    let finalLogoUrl = logoUrl;
-
     const newClient: ClientFormData = {
       name: name.trim(),
-      logoUrl: finalLogoUrl.trim(),
+      logoUrl: logoUrl.trim(),
       status: status,
       type: type,
       color: color,
@@ -106,7 +111,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
           <Input
             id="fileUpload"
             type="file"
-            accept=".jpg, .png, .webp"
+            accept="image/*"
             onChange={handleFileChange}
             className="hidden"
           />
