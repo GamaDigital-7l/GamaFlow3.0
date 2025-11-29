@@ -49,7 +49,6 @@ const AdminDashboard = withRole(Index, ["admin", "user"]); // Dashboard agora é
 const AdminAppSettings = withRole(AppSettingsPage, "admin");
 const AdminClientFeedback = withRole(ClientFeedbackPage, "admin");
 const AuthenticatedGoals = withRole(GoalsPage, ["admin", "user"]);
-const CrmPage = withRole(CrmPage, "admin");
 const FinanceiroPage = withRole(FinanceiroPage, "admin");
 const AdminBriefings = withRole(BriefingsPage, "admin");
 const AdminBriefingTemplates = withRole(BriefingTemplatesPage, "admin");
