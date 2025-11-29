@@ -7,8 +7,9 @@ import { format, parseISO, isSameMonth, isSameYear } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramNotifications } from './use-telegram-notifications';
-import { useWhatsappNotifications } from './use-whatsapp-notifications'; // NOVO
+import { useSession } from '@/components/SessionContextProvider';
 import { PostgrestError } from '@supabase/supabase-js';
+import { useWhatsappNotifications } from './use-whatsapp-notifications'; // NOVO
 
 const CLIENTS_QUERY_KEY = 'allClients';
 const DELETE_CLIENT_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/delete-client-data';
@@ -123,6 +124,8 @@ const upsertClientToDB = async (clientData: Omit<Client, 'posts'> & { posts?: Po
     
     const payload = mapClientToSupabase(clientWithId);
     
+    console.log("Payload being sent to upsertClient:", payload); // Adicionando log
+    
     const { data, error } = await supabase
         .from('clients')
         .upsert(payload, { onConflict: 'id' })
@@ -153,6 +156,10 @@ const deleteClientData = async (clientId: string): Promise<void> => {
         throw new Error(result.error || 'Failed to delete client data via Edge Function.');
     }
     
+    // Nota: A exclusão de dados do cliente (posts, links, etc.) é tratada
+    // pelas políticas RLS e Foreign Keys no banco de dados, ou será simulada no frontend.
+    // O foco principal desta função é a exclusão dos usuários Auth.
+
     // Deleta o cliente do DB (após deletar usuários Auth)
     const { error } = await supabase.from('clients').delete().eq('id', clientId);
     if (error) throw new Error(`Failed to delete client from DB: ${error.message}`);
@@ -189,7 +196,6 @@ export function useClientStore() {
     queryFn: fetchClients,
     staleTime: 300000, // 5 minutos de cache
   });
-
 
   // --- Funções Auxiliares (Não Mutáveis) ---
 
@@ -329,7 +335,7 @@ export function useClientStore() {
         
         if (newPost.status === 'Aprovação') {
             // Notificação Telegram
-            notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM/yyyy')}`);
+            notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM HH:mm')}`);
             
             // Notificação WhatsApp
             if (client.whatsappNumber) {
@@ -439,7 +445,6 @@ export function useClientStore() {
 
     updatePost(clientId, updatedPost);
   }, [getPostById, updatePost]);
-
 
   return {
     clients: clientsWithProgress,
