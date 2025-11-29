@@ -9,6 +9,7 @@ import { TemplateForm } from '@/components/tasks/TemplateForm';
 import { withRole } from '@/components/withRole';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from "@/components/ui/badge"; // Importando Badge
 
 // Mapeamento de TargetBoard para Título
 const TARGET_BOARD_TITLES: Record<TargetBoard, string> = {
@@ -133,4 +134,4 @@ const TasksConfigPage: React.FC = () => {
   );
 };
 
-export default TasksConfigPage;
+export default withRole(TasksConfigPage, 'admin');
