@@ -109,9 +109,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                     : "text-sidebar-foreground",
                 )}
                 onClick={() => setIsOpen(false)} // Close on click
+                title={item.name} // Adiciona o nome como tooltip
               >
-                <item.icon className="h-5 w-5 mr-0" /> {/* Removido o espaçamento */}
-                {/* Removido o texto */}
+                <item.icon className="h-5 w-5 mx-auto" /> 
               </Link>
             ))}
             
@@ -127,8 +127,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                             : "text-sidebar-foreground",
                     )}
                     onClick={() => setIsOpen(false)}
+                    title="Portal do Cliente"
                 >
-                    <FileText className="h-5 w-5 mr-0" /> {/* Removido o espaçamento */}
+                    <FileText className="h-5 w-5 mx-auto" /> 
                 </Link>
             )}
           </nav>

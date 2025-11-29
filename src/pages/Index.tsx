@@ -32,7 +32,7 @@ interface HabitBoardProps {
 
 const HabitBoard: React.FC<HabitBoardProps> = ({ habits, onOpenDetailedForm }) => {
   return (
-    <div className={cn("space-y-3 p-4 bg-card border rounded-lg shadow-sm")}>
+    <div className={cn("space-y-3 p-4 bg-card border rounded-xl shadow-sm")}>
       <h3 className="text-lg font-bold text-foreground/90 border-b pb-2 mb-2 flex items-center space-x-2">
         <Zap className="h-5 w-5 text-dyad-500" />
         <span>Hábitos de Hoje ({habits.length})</span>
@@ -110,7 +110,7 @@ const Index = () => {
       title: "Prioridade Alta", 
       tasks: todayHigh, 
       className: "",
-      allowQuickAdd: false, 
+      allowQuickAdd: true, // Reativando para o novo botão inline
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Alta' as TaskPriority 
     },
@@ -118,7 +118,7 @@ const Index = () => {
       title: "Prioridade Média", 
       tasks: todayMedium, 
       className: "",
-      allowQuickAdd: false, 
+      allowQuickAdd: true, // Reativando para o novo botão inline
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Média' as TaskPriority 
     },
@@ -126,7 +126,7 @@ const Index = () => {
       title: "Prioridade Baixa", 
       tasks: thisWeekLow, 
       className: "",
-      allowQuickAdd: false, 
+      allowQuickAdd: true, // Reativando para o novo botão inline
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
