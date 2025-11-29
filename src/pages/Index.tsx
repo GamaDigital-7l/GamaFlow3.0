@@ -4,9 +4,9 @@ import { useTaskStore } from "@/hooks/use-task-store";
 import { useHabits } from "@/hooks/use-habits";
 import { TaskCard } from "@/components/TaskCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, ListPlus, Loader2, ChevronLeft, ChevronRight, Zap, Briefcase } from "lucide-react";
+import { AlertTriangle, ListPlus, Loader2, ChevronLeft, ChevronRight, Zap, Briefcase } from 'lucide-react';
 import { TaskForm } from "@/components/TaskForm";
-import { TaskPriority, TaskCategory, Task } from "@/types/task";
+import { TaskPriority, TaskCategory, Task } from '@/types/task';
 import { TaskEditDialog } from "@/components/TaskEditDialog";
 import { ProductivityMetrics } from "@/components/ProductivityMetrics";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,7 +16,7 @@ import { HabitPill } from "@/components/HabitPill";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/SessionContextProvider";
 import { RecentFeedbackList } from "@/components/RecentFeedbackList";
@@ -107,7 +107,7 @@ const Index = () => {
 
   const taskBoards = useMemo(() => [
     { 
-      title: "Hoje — Prioridade Alta", 
+      title: "Prioridade Alta", 
       tasks: todayHigh, 
       className: "",
       allowQuickAdd: true, 
@@ -115,7 +115,7 @@ const Index = () => {
       defaultPriority: 'Alta' as TaskPriority 
     },
     { 
-      title: "Hoje — Prioridade Média", 
+      title: "Prioridade Média", 
       tasks: todayMedium, 
       className: "",
       allowQuickAdd: true, 
@@ -123,7 +123,7 @@ const Index = () => {
       defaultPriority: 'Média' as TaskPriority 
     },
     { 
-      title: "Esta Semana — Baixa", 
+      title: "Prioridade Baixa", 
       tasks: thisWeekLow, 
       className: "",
       allowQuickAdd: true, 
@@ -131,30 +131,14 @@ const Index = () => {
       defaultPriority: 'Baixa' as TaskPriority 
     },
     { 
-      title: "WOE Comunicação", 
-      tasks: woeTasks, 
-      className: "",
-      allowQuickAdd: true, 
-      defaultCategory: 'WOE' as TaskCategory, 
-      defaultPriority: 'Média' as TaskPriority 
+      title: "Concluídas",
+      tasks: completed, 
+      className: "opacity-80",
+      allowQuickAdd: false,
+      defaultCategory: 'Geral' as TaskCategory, 
+      defaultPriority: 'Baixa' as TaskPriority 
     },
-    { 
-      title: "Tarefas de Cliente", 
-      tasks: clientTasks, 
-      className: "",
-      allowQuickAdd: true, 
-      defaultCategory: 'Clientes' as TaskCategory, 
-      defaultPriority: 'Alta' as TaskPriority 
-    },
-    { 
-      title: "Gama Creative (Agência)",
-      tasks: agencyTasks, 
-      className: "",
-      allowQuickAdd: true, 
-      defaultCategory: 'Agência' as TaskCategory, 
-      defaultPriority: 'Média' as TaskPriority 
-    },
-  ], [todayHigh, todayMedium, thisWeekLow, woeTasks, clientTasks, agencyTasks]);
+  ], [todayHigh, todayMedium, thisWeekLow, completed]);
 
   const scrollOverdue = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -194,7 +178,6 @@ const Index = () => {
               ))}
             </div>
             <ScrollBar orientation="horizontal" />
-          </ScrollArea>
           
           {/* Controles de Scroll (Desktop) */}
           {!isMobile && overdue.length > 3 && (
@@ -248,7 +231,7 @@ const Index = () => {
 
       {/* Título e Botão de Adição Detalhada Global */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard de Tarefas</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Painel de Tarefas</h1>
         <Button 
           onClick={() => handleOpenDetailedForm()}
           className="bg-dyad-500 hover:bg-dyad-600"
@@ -288,17 +271,6 @@ const Index = () => {
         {/* Quadro de Hábitos de Hoje (Penúltimo) */}
         <HabitBoard 
           habits={activeHabitsToday}
-          onOpenDetailedForm={handleCloseDetailedForm}
-        />
-
-        {/* Quadro de Concluídas (Último) */}
-        <TaskBoard 
-          title={`Concluídas (${completed.length})`}
-          tasks={completed}
-          onComplete={completeTask} 
-          onEdit={handleEditTask}
-          className="opacity-80"
-          allowQuickAdd={false}
           onOpenDetailedForm={handleCloseDetailedForm}
         />
       </div>
