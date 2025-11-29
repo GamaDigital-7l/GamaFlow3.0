@@ -110,7 +110,7 @@ const Index = () => {
       title: "Prioridade Alta", 
       tasks: todayHigh, 
       className: "",
-      allowQuickAdd: true, 
+      allowQuickAdd: false, 
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Alta' as TaskPriority 
     },
@@ -118,7 +118,7 @@ const Index = () => {
       title: "Prioridade Média", 
       tasks: todayMedium, 
       className: "",
-      allowQuickAdd: true, 
+      allowQuickAdd: false, 
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Média' as TaskPriority 
     },
@@ -126,7 +126,7 @@ const Index = () => {
       title: "Prioridade Baixa", 
       tasks: thisWeekLow, 
       className: "",
-      allowQuickAdd: true, 
+      allowQuickAdd: false, 
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
@@ -258,11 +258,6 @@ const Index = () => {
       
       {/* 2. Resumo Diário de IA e Métricas (NOVO RODAPÉ) */}
       {/* Ajuste: Grid de 1 coluna no mobile, 3 no lg */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <DailySummaryCard />
-        <ProductivityMetrics />
-        <GoalProgressSummary />
-      </div>
       
       {/* 3. Progresso de Clientes e Feedbacks (RODAPÉ) */}
       {userRole === 'admin' && (
@@ -298,6 +293,7 @@ const Index = () => {
         </DialogContent>
       </Dialog>
       
+      <DailySummaryCard />
       <div className="p-4 text-center">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Gama Creative Design Studio ®
