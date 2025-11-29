@@ -29,19 +29,19 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ['admin', 'user'] },
-  { name: "Tarefas", href: "/tasks", icon: ListTodo, roles: ['admin', 'user'] },
-  { name: "Clientes", href: "/clients", icon: Users, roles: ['admin'] },
-  { name: "CRM", href: "/crm", icon: Briefcase, roles: ['admin'] },
-  { name: "Propostas", href: "/proposals", icon: Send, roles: ['admin'] },
-  { name: "Briefings", href: "/briefings", icon: ClipboardList, roles: ['admin'] },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign, roles: ['admin'] },
-  { name: "Metas", href: "/goals", icon: Target, roles: ['admin', 'user'] },
-  { name: "Feedbacks", href: "/admin/feedback", icon: MessageSquare, roles: ['admin'] },
-  { name: "Relatórios", href: "/reports", icon: BarChart3, roles: ['admin'] },
-  { name: "Gerenciar Usuários", href: "/admin/users", icon: UserCog, roles: ['admin'] },
-  { name: "Configurações App", href: "/admin/settings", icon: Settings, roles: ['admin'] },
-  { name: "Anotações", href: "/notes", icon: Notebook, roles: ['admin', 'user'] }, // Adicionando Anotações
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ['admin', 'user'], isMain: true },
+  { name: "Tarefas", href: "/tasks", icon: ListTodo, roles: ['admin', 'user'], isMain: false },
+  { name: "Clientes", href: "/clients", icon: Users, roles: ['admin'], isMain: true },
+  { name: "CRM", href: "/crm", icon: Briefcase, roles: ['admin'], isMain: true },
+  { name: "Propostas", href: "/proposals", icon: Send, roles: ['admin'], isMain: false },
+  { name: "Briefings", href: "/briefings", icon: ClipboardList, roles: ['admin'], isMain: false },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign, roles: ['admin'], isMain: true },
+  { name: "Metas", href: "/goals", icon: Target, roles: ['admin', 'user'], isMain: false },
+  { name: "Feedbacks", href: "/admin/feedback", icon: MessageSquare, roles: ['admin'], isMain: false },
+  { name: "Relatórios", href: "/reports", icon: BarChart3, roles: ['admin'], isMain: false },
+  { name: "Gerenciar Usuários", href: "/admin/users", icon: UserCog, roles: ['admin'], isMain: false },
+  { name: "Configurações App", href: "/admin/settings", icon: Settings, roles: ['admin'], isMain: false },
+  { name: "Anotações", href: "/notes", icon: Notebook, roles: ['admin', 'user'], isMain: true }, // Adicionando Anotações
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
@@ -49,11 +49,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const location = useLocation(); // Use useLocation to check active path
   const isMobile = useIsMobile(); // Usando o hook para detectar mobile
   
-  // Filter navigation items based on role
   const filteredNavItems = navItems.filter(item => 
     userRole && item.roles.includes(userRole)
   );
   
+  const mainItems = filteredNavItems.filter(item => item.isMain);
+  const secondaryItems = filteredNavItems.filter(item => !item.isMain);
+
   // If it's a client, the only internal navigation is the Profile (which is in the Dropdown)
   // The client's main navigation is the Playbook, which is the index of the protected route.
   const clientNavItems = userRole === 'client' ? [] : filteredNavItems;
@@ -78,6 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       title={item.name} // Adiciona o nome como tooltip
     >
       <item.icon className="h-5 w-5 mx-auto" /> 
+      {isExpanded && <span>{item.name}</span>}
     </Link>
   );
 
