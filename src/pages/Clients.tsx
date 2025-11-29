@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
-import { Client } from "@/types/client";
+import { Client, ClientStatus, ClientType } from "@/types/client";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Plus, MoreVertical, Edit, Trash2, Loader2, Phone, Mail } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
