@@ -42,10 +42,11 @@ serve(async (req) => {
     )
 
     // 5. Upload the file to Supabase Storage
+    const filePath = \`client-logos/\${clientId}/\${filename}\`;
     const { data, error } = await supabaseAdmin
       .storage
       .from('playbook-files')
-      .upload(\`client-logos/\${clientId}/\${filename}\`, fileData, {
+      .upload(filePath, fileData, {
         contentType: fileType,
         upsert: true
       })
