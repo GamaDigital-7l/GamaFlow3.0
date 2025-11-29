@@ -13,58 +13,54 @@ import {
   MessageSquare,
   ClipboardList,
   Target,
-  Briefcase,
-  DollarSign,
-  Send,
-  Notebook,
+  Briefcase, // Import Briefcase for CRM
+  DollarSign, // Import DollarSign for Financeiro
+  Send, // Using Send for Propostas
+  Notebook, // Import Notebook for Notes
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSession } from "./SessionContextProvider";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile"; // Importando o hook useIsMobile
 
 interface SidebarProps {
-  isOpen: boolean; // Controla se o modo expandido (modal) está aberto
+  isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
 const navItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ['admin', 'user'], isMain: true },
-  { name: "Clientes", href: "/clients", icon: Users, roles: ['admin'], isMain: true },
-  { name: "CRM", href: "/crm", icon: Briefcase, roles: ['admin'], isMain: true },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign, roles: ['admin'], isMain: true },
-  { name: "Anotações", href: "/notes", icon: Notebook, roles: ['admin', 'user'], isMain: true },
-  
-  // Itens Secundários (Apenas no menu expandido)
-  { name: "Tarefas", href: "/tasks", icon: ListTodo, roles: ['admin', 'user'], isMain: false },
-  { name: "Propostas", href: "/proposals", icon: Send, roles: ['admin'], isMain: false },
-  { name: "Briefings", href: "/briefings", icon: ClipboardList, roles: ['admin'], isMain: false },
-  { name: "Metas", href: "/goals", icon: Target, roles: ['admin', 'user'], isMain: false },
-  { name: "Feedbacks", href: "/admin/feedback", icon: MessageSquare, roles: ['admin'], isMain: false },
-  { name: "Relatórios", href: "/reports", icon: BarChart3, roles: ['admin'], isMain: false },
-  { name: "Gerenciar Usuários", href: "/admin/users", icon: UserCog, roles: ['admin'], isMain: false },
-  { name: "Configurações App", href: "/admin/settings", icon: Settings, roles: ['admin'], isMain: false },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ['admin', 'user'] },
+  { name: "Tarefas", href: "/tasks", icon: ListTodo, roles: ['admin', 'user'] },
+  { name: "Clientes", href: "/clients", icon: Users, roles: ['admin'] },
+  { name: "CRM", href: "/crm", icon: Briefcase, roles: ['admin'] },
+  { name: "Propostas", href: "/proposals", icon: Send, roles: ['admin'] },
+  { name: "Briefings", href: "/briefings", icon: ClipboardList, roles: ['admin'] },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign, roles: ['admin'] },
+  { name: "Metas", href: "/goals", icon: Target, roles: ['admin', 'user'] },
+  { name: "Feedbacks", href: "/admin/feedback", icon: MessageSquare, roles: ['admin'] },
+  { name: "Relatórios", href: "/reports", icon: BarChart3, roles: ['admin'] },
+  { name: "Gerenciar Usuários", href: "/admin/users", icon: UserCog, roles: ['admin'] },
+  { name: "Configurações App", href: "/admin/settings", icon: Settings, roles: ['admin'] },
+  { name: "Anotações", href: "/notes", icon: Notebook, roles: ['admin', 'user'] }, // Adicionando Anotações
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const { userRole, clientId } = useSession();
-  const location = useLocation();
-  const isMobile = useIsMobile();
+  const { userRole, clientId } = useSession(); // Get clientId from session
+  const location = useLocation(); // Use useLocation to check active path
+  const isMobile = useIsMobile(); // Usando o hook para detectar mobile
   
+  // Filter navigation items based on role
   const filteredNavItems = navItems.filter(item => 
     userRole && item.roles.includes(userRole)
   );
   
-  const mainItems = filteredNavItems.filter(item => item.isMain);
-  const secondaryItems = filteredNavItems.filter(item => !item.isMain);
+  // If it's a client, the only internal navigation is the Profile (which is in the Dropdown)
+  // The client's main navigation is the Playbook, which is the index of the protected route.
+  const clientNavItems = userRole === 'client' ? [] : filteredNavItems;
 
-  // Se for cliente, o único item principal é o Playbook
-  const clientPlaybookLink = clientId ? `/playbook/${clientId}` : '/login';
-  const isClient = userRole === 'client';
-  
-  // O modo de exibição é expandido se estiver no mobile OU se o 'isOpen' for true (no desktop, é o modal)
-  const isExpandedView = isMobile || isOpen;
-  
+  // Determine the client's playbook link
+  const clientPlaybookLink = clientId ? `/playbook/${clientId}` : '/login'; // Fallback to login if no client ID
+
   // Renderiza um item de navegação
   const renderNavItem = (item: typeof navItems[0], isExpanded: boolean) => (
     <Link
@@ -73,18 +69,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       className={cn(
         "flex items-center p-3 rounded-lg transition-colors duration-200",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        location.pathname.startsWith(item.href) && item.href !== '/'
-          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-          : location.pathname === '/' && item.href === '/'
+        location.pathname.startsWith(item.href)
           ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
           : "text-sidebar-foreground",
         isExpanded ? "justify-start" : "justify-center"
       )}
-      onClick={() => isMobile && setIsOpen(false)}
-      title={item.name}
+      onClick={() => setIsOpen(false)} // Close on click
+      title={item.name} // Adiciona o nome como tooltip
     >
-      <item.icon className={cn("h-5 w-5", isExpanded && "mr-3")} />
-      {isExpanded && <span>{item.name}</span>}
+      <item.icon className="h-5 w-5 mx-auto" /> 
     </Link>
   );
 
@@ -94,7 +87,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       className={cn(
         "fixed inset-y-0 left-0 z-20 flex-shrink-0",
         "w-20 bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-lg",
-        "hidden md:flex flex-col p-4 space-y-4" // Apenas desktop
+        "hidden md:flex flex-col p-4 space-y-4", // Apenas desktop
+        isOpen && "hidden" // Esconde quando o menu expandido está aberto
       )}
     >
       {/* Logo/Título Compacto */}
