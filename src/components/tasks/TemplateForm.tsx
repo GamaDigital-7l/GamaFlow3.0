@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,58 +90,21 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
     onSubmit(templateData);
   };
 
-  // Funções de manipulação de estado (usando useCallback para evitar recriações desnecessárias)
-  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-  }, []);
-
-  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value);
-  }, []);
-
-  const handleTargetBoardChange = useCallback((value: TargetBoard) => {
-    setTargetBoard(value);
-  }, []);
-
-  const handleDaysOfWeekChange = useCallback((value: DayOfWeek[]) => {
-    setDaysOfWeek(value);
-  }, []);
-
-  const handleTimeOfDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTimeOfDay(e.target.value);
-  }, []);
-
-  const handlePriorityChange = useCallback((value: TaskPriority) => {
-    setPriority(value);
-  }, []);
-
-  const handleClientNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setClientName(e.target.value);
-  }, []);
-
-  const handleCategoryChange = useCallback((value: TaskCategory) => {
-    setCategory(value);
-  }, []);
-
-  const handleTaskTypeChange = useCallback((value: TaskType) => {
-    setTaskType(value);
-  }, []);
-
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="title">Título</Label>
-        <Input id="title" value={title} onChange={handleTitleChange} required disabled={isSubmitting} />
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={isSubmitting} />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="description">Descrição</Label>
-        <Textarea id="description" value={description} onChange={handleDescriptionChange} disabled={isSubmitting} />
+        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSubmitting} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="targetBoard">Quadro de Destino</Label>
-          <Select value={targetBoard} onValueChange={handleTargetBoardChange} disabled={isSubmitting}>
+          <Select value={targetBoard} onValueChange={(value) => setTargetBoard(value as TargetBoard)} disabled={isSubmitting}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o quadro" />
             </SelectTrigger>
@@ -154,14 +117,14 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
         </div>
         <div className="grid gap-2">
           <Label htmlFor="priority">Prioridade</Label>
-          <Select value={priority} onValueChange={handlePriorityChange} disabled={isSubmitting}>
+          <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)} disabled={isSubmitting}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione a prioridade" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Alta">Alta</SelectItem>
-              <SelectItem value="Média">Média</SelectItem>
-              <SelectItem value="Baixa">Baixa</SelectItem>
+              {CATEGORY_OPTIONS.map(opt => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -170,7 +133,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="category">Categoria</Label>
-          <Select value={category} onValueChange={handleCategoryChange} disabled={isSubmitting}>
+          <Select value={category} onValueChange={(value) => setCategory(value as TaskCategory)} disabled={isSubmitting}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione a categoria" />
             </SelectTrigger>
@@ -183,7 +146,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
         </div>
         <div className="grid gap-2">
           <Label htmlFor="taskType">Tipo de Tarefa</Label>
-          <Select value={taskType} onValueChange={handleTaskTypeChange} disabled={isSubmitting}>
+          <Select value={taskType} onValueChange={(value) => setTaskType(value as TaskType)} disabled={isSubmitting}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
@@ -201,7 +164,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
         <ToggleGroup 
           type="multiple" 
           value={daysOfWeek} 
-          onValueChange={handleDaysOfWeekChange}
+          onValueChange={(value: DayOfWeek[]) => setDaysOfWeek(value)}
           className="justify-start flex-wrap"
           disabled={isSubmitting}
         >
@@ -227,7 +190,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
           id="timeOfDay" 
           type="time" 
           value={timeOfDay} 
-          onChange={handleTimeOfDayChange} 
+          onChange={(e) => setTimeOfDay(e.target.value)} 
           disabled={isSubmitting} 
         />
       </div>
@@ -236,7 +199,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
         <Input 
           id="clientName" 
           value={clientName} 
-          onChange={handleClientNameChange} 
+          onChange={(e) => setClientName(e.target.value)} 
           placeholder="Nome do Cliente"
           disabled={isSubmitting} 
         />
