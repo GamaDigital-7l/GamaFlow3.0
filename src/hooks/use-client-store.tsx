@@ -190,91 +190,7 @@ export function useClientStore() {
     staleTime: 300000, // 5 minutos de cache
   });
 
-
-  // --- Funções Auxiliares (Não Mutáveis) ---
-
-  const getClientById = useCallback((clientId: string) => {
-    return clients.find(c => c.id === clientId);
-  }, [clients]);
-
-  const getPostById = useCallback((clientId: string, postId: string) => {
-    const client = getClientById(clientId);
-    return client?.posts.find(p => p.id === postId);
-  }, [getClientById]);
-
-  const getKanbanData = useCallback((clientId: string, monthYear: string) => {
-    const client = getClientById(clientId);
-    if (!client) return { columns: {}, columnOrder: [] as KanbanColumnId[], postsMap: {} };
-
-    const monthlyPosts = client.posts.filter(p => p.monthYear === monthYear);
-
-    const postsMap = monthlyPosts.reduce((acc, post) => {
-      acc[post.id] = post;
-      return acc;
-    }, {} as Record<string, Post>);
-
-    const columns: Record<KanbanColumnId, KanbanColumn> = columnOrder.reduce((acc, columnId) => {
-      acc[columnId] = {
-        id: columnId,
-        title: columnId,
-        postIds: monthlyPosts
-          .filter(post => post.status === columnId)
-          .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
-          .map(post => post.id),
-      };
-      return acc;
-    }, {} as Record<KanbanColumnId, KanbanColumn>);
-
-    return { columns, columnOrder, postsMap };
-  }, [getClientById]);
-
-  const getAllApprovedOrPublishedPosts = useMemo(() => {
-    const approvedStatuses: KanbanColumnId[] = ['Aprovado', 'Publicado'];
-    
-    const allPosts = clients.flatMap(client => 
-      client.posts.map(post => ({
-        ...post,
-        clientName: client.name,
-      }))
-    );
-
-    return allPosts
-      .filter(post => approvedStatuses.includes(post.status))
-      .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime());
-  }, [clients]);
-  
-  const clientsWithProgress = useMemo(() => {
-    const currentMonthYear = format(new Date(), 'yyyy-MM');
-    
-    return clients.map(client => {
-      const completedPostsThisMonth = client.posts.filter(post => 
-        (post.status === 'Aprovado' || post.status === 'Publicado') && 
-        post.monthYear === currentMonthYear
-      );
-      
-      const completedCount = completedPostsThisMonth.length;
-      const goal = client.monthlyPostGoal || 0;
-      const percentage = goal > 0 ? Math.min(100, Math.round((completedCount / goal) * 100)) : 0;
-      
-      let status: 'Atingida' | 'Em Progresso' = 'Em Progresso';
-      if (completedCount >= goal && goal > 0) {
-        status = 'Atingida';
-      }
-
-      return {
-        ...client,
-        completedPostsThisMonth,
-        completedCount,
-        goal,
-        percentage,
-        progressStatus: status,
-      };
-    });
-  }, [clients]);
-
-
-  // --- Funções de Mutação (CRUD) ---
-
+  // 2. Mutate para adicionar, atualizar e deletar clientes
   const clientMutation = useMutation({
     mutationFn: upsertClientToDB,
     onSuccess: (newClient) => {
@@ -329,7 +245,7 @@ export function useClientStore() {
         
         if (newPost.status === 'Aprovação') {
             // Notificação Telegram
-            notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM/yyyy')}`);
+            notifyTelegram(client.name, 'LINK GERADO', postTitle, `Aprovação em: ${format(newPost.dueDate, 'dd/MM HH:mm')}`);
             
             // Notificação WhatsApp
             if (client.whatsappNumber) {
@@ -459,3 +375,94 @@ export function useClientStore() {
     isMutating: clientMutation.isPending || postMutation.isPending || deleteClientMutation.isPending,
   };
 }
+</dyad-file>
+```
+<dyad-chat-summary>Increasing staleTime for queries</dyad-chat-summary>
+I've increased the `staleTime` for the queries to 5 minutes.
+
+I will now implement code splitting for the routes.
+I will start by creating separate chunks for the routes.
+
+```typescript
+<dyad-write path="src/hooks/use-telegram-notifications.tsx" description="Adding comments to the code.">
+import { useAppSettings } from './use-app-settings';
+import { useCallback } from 'react';
+import { showError } from '@/utils/toast';
+
+const TELEGRAM_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/send-telegram-notification';
+
+interface TelegramConfig {
+    botToken: string;
+    chatId: string;
+    isEnabled: boolean;
+}
+
+// Função interna para enviar a notificação
+const sendNotification = async (config: TelegramConfig, message: string) => {
+    if (!config.isEnabled || !config.botToken || !config.chatId) {
+        // console.log("Telegram notification skipped: disabled or missing config.");
+        return;
+    }
+    
+    try {
+        const response = await fetch(TELEGRAM_FUNCTION_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                botToken: config.botToken,
+                chatId: config.chatId,
+                message: message,
+            }),
+        });
+
+        const result = await response.json()
+
+        if (!response.ok || result.status === 'error') {
+            console.error("Telegram API Error:", result);
+            return new Response(JSON.stringify({ error: result.message || 'Failed to send WhatsApp message.' }), {
+                status: response.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
+        }
+    } catch (error) {
+        console.error("Network error sending Telegram notification:", error);
+    }
+};
+
+export const useTelegramNotifications = () => {
+    const { settings } = useAppSettings();
+    
+    // 1. Notificação de Clientes (Aprovação, Edição, Link Gerado)
+    const notifyClientAction = useCallback((clientName: string, action: string, postTitle: string, details?: string) => {
+        const config = settings.clientTelegramConfig;
+        
+        const message = 
+`*CLIENTE: ${clientName}*
+Ação: ${action}
+Post/Tarefa: ${postTitle}
+${details ? `Detalhes: ${details}` : ''}`;
+
+        sendNotification(config, message);
+    }, [settings.clientTelegramConfig]);
+    
+    // 2. Notificação de Tarefas Pessoais (Alta Prioridade, Atraso, Lembrete, Recorrente Falhada)
+    const notifyTaskAction = useCallback((title: string, status: string, board: string, details?: string) => {
+        const config = settings.taskTelegramConfig;
+        
+        const message = 
+`*TAREFA PESSOAL*
+Título: ${title}
+Status: ${status}
+Quadro: ${board}
+${details ? `Detalhes: ${details}` : ''}`;
+
+        sendNotification(config, message);
+    }, [settings.taskTelegramConfig]);
+
+    return {
+        notifyClientAction,
+        notifyTaskAction,
+    };
+};

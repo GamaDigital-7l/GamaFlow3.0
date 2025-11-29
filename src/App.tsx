@@ -1,14 +1,10 @@
+import React, { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Clients from "./pages/Clients";
-import Reports from "./pages/Reports";
-import ClientWorkspacePage from "./pages/ClientWorkspacePage";
-import Login from "./pages/Login";
 import { AppShell } from "./components/AppShell";
 import { ThemeProvider } from "next-themes";
 import { SessionContextProvider } from "./components/SessionContextProvider";
@@ -17,22 +13,29 @@ import { withRole } from "./components/withRole";
 import ProfilePage from "./pages/ProfilePage";
 import PostApprovalPage from "./pages/PostApprovalPage";
 import ApprovalConfirmationPage from "./pages/ApprovalConfirmationPage";
-import TasksConfigPage from "./pages/TasksConfigPage";
-import UserManagementPage from "./pages/UserManagementPage";
-import ClientApprovalListPage from "./pages/ClientApprovalListPage";
-import AppSettingsPage from "./pages/AppSettingsPage";
-import ClientFeedbackPage from "./pages/ClientFeedbackPage";
-import Playbook from "./pages/Playbook";
-import GoalsPage from "./pages/GoalsPage";
-import CrmPage from "./pages/CrmPage"; 
-import FinanceiroPage from "./pages/FinanceiroPage";
-import BriefingsPage from "./pages/BriefingsPage";
-import PublicBriefingPage from "./pages/PublicBriefingPage";
-import BriefingTemplatesPage from "./pages/BriefingTemplatesPage";
-import ProposalsPage from "./pages/ProposalsPage";
-import PublicProposalPage from "./pages/PublicProposalPage";
-import NotesPage from "./pages/NotesPage";
-import OnboardingPage from "./pages/OnboardingPage"; // Importando OnboardingPage
+import ErrorBoundary from "./components/ErrorBoundary";
+
+const Index = lazy(() => import("./pages/Index"));
+const Clients = lazy(() => import("./pages/Clients"));
+const Reports = lazy(() => import("./pages/Reports"));
+const ClientWorkspacePage = lazy(() => import("./pages/ClientWorkspacePage"));
+const Login = lazy(() => import("./pages/Login"));
+const TasksConfigPage = lazy(() => import("./pages/TasksConfigPage"));
+const UserManagementPage = lazy(() => import("./pages/UserManagementPage"));
+const ClientApprovalListPage = lazy(() => import("./pages/ClientApprovalListPage"));
+const AppSettingsPage = lazy(() => import("./pages/AppSettingsPage"));
+const ClientFeedbackPage = lazy(() => import("./pages/ClientFeedbackPage"));
+const Playbook = lazy(() => import("./pages/Playbook"));
+const GoalsPage = lazy(() => import("./pages/GoalsPage"));
+const CrmPage = lazy(() => import("./pages/CrmPage")); 
+const FinanceiroPage = lazy(() => import("./pages/FinanceiroPage"));
+const BriefingsPage = lazy(() => import("./pages/BriefingsPage"));
+const PublicBriefingPage = lazy(() => import("./pages/PublicBriefingPage"));
+const BriefingTemplatesPage = lazy(() => import("./pages/BriefingTemplatesPage"));
+const ProposalsPage = lazy(() => import("./pages/ProposalsPage"));
+const PublicProposalPage = lazy(() => import("./pages/PublicProposalPage"));
+const NotesPage = lazy(() => import("./pages/NotesPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage")); // Importando OnboardingPage
 
 const queryClient = new QueryClient();
 
@@ -60,6 +63,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <SessionContextProvider>
+          <ErrorBoundary>
             <Routes>
               {/* Rotas Públicas */}
               <Route path="/approval/client/:clientId" element={<ClientApprovalListPage />} />
@@ -91,29 +95,29 @@ const App = () => (
               >
                 {/* Rotas Filhas (Renderizadas via Outlet no AppShell) */}
                 {/* O Dashboard agora usa withRole para proteger contra clientes */}
-                <Route index element={<AdminDashboard />} /> 
-                <Route path="tasks" element={<AdminTasksConfig />} />
-                <Route path="goals" element={<AuthenticatedGoals />} />
-                <Route path="clients" element={<AdminClients />} />
-                <Route path="crm" element={<AdminCrm />} /> 
-                <Route path="proposals" element={<AdminProposals />} />
+                <Route index element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminDashboard /></Suspense>} /> 
+                <Route path="tasks" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminTasksConfig /></Suspense>} />
+                <Route path="goals" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AuthenticatedGoals /></Suspense>} />
+                <Route path="clients" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminClients /></Suspense>} />
+                <Route path="crm" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminCrm /></Suspense>} /> 
+                <Route path="proposals" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminProposals /></Suspense>} />
                 
                 {/* Rota de Briefings (Contém a rota de templates aninhada) */}
                 <Route path="briefings">
-                    <Route index element={<AdminBriefings />} />
-                    <Route path="templates" element={<AdminBriefingTemplates />} />
+                    <Route index element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminBriefings /></Suspense>} />
+                    <Route path="templates" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminBriefingTemplates /></Suspense>} />
                 </Route>
                 
-                <Route path="financeiro" element={<AdminFinanceiro />} />
-                <Route path="notes" element={<AuthenticatedNotes />} />
+                <Route path="financeiro" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminFinanceiro /></Suspense>} />
+                <Route path="notes" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AuthenticatedNotes /></Suspense>} />
                 
                 {/* ClientWorkspacePage agora é APENAS para Admin (Kanban/Config Onboarding) */}
-                <Route path="clients/:clientId/*" element={<ClientWorkspacePage />} /> 
+                <Route path="clients/:clientId/*" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><ClientWorkspacePage /></Suspense>} /> 
                 
-                <Route path="reports" element={<AdminReports />} />
-                <Route path="admin/users" element={<AdminUserManagement />} />
-                <Route path="admin/feedback" element={<AdminClientFeedback />} />
-                <Route path="admin/settings" element={<AdminAppSettings />} />
+                <Route path="reports" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminReports /></Suspense>} />
+                <Route path="admin/users" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminUserManagement /></Suspense>} />
+                <Route path="admin/feedback" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminClientFeedback /></Suspense>} />
+                <Route path="admin/settings" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminAppSettings /></Suspense>} />
                 <Route path="profile" element={<ProfilePage />} />
                 
                 {/* 404 dentro do AppShell */}
@@ -123,6 +127,7 @@ const App = () => (
               {/* Rota de fallback para 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </ErrorBoundary>
           </SessionContextProvider>
         </BrowserRouter>
       </TooltipProvider>

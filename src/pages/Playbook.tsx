@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClientStore } from '@/hooks/use-client-store';
 import { PlaybookLayout } from '@/components/playbook/PlaybookLayout';
@@ -12,6 +12,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppSettings } from '@/hooks/use-app-settings';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router-dom';
+
+const VisualIdentityPage = lazy(() => import('./playbook/VisualIdentityPage'));
+
+interface PlaybookProps {
+  clientId: string;
+}
 
 const Playbook: React.FC = () => {
   const { clientId: urlClientId } = useParams<{ clientId: string }>(); // Renomeado para evitar conflito

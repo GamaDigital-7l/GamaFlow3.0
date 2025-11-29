@@ -129,7 +129,7 @@ export const useAppSettings = () => {
   const { data: settings = defaultSettings, isLoading } = useQuery<AppSettings, Error>({
     queryKey: [SETTINGS_QUERY_KEY],
     queryFn: fetchSettings,
-    staleTime: Infinity, // Configurações raramente mudam, mantemos o cache por muito tempo
+    staleTime: 3600000, // Configurações raramente mudam, mantemos o cache por muito tempo
   });
 
   // Mutação para atualizar as configurações
