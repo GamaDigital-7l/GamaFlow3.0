@@ -118,11 +118,13 @@ export const useBriefings = () => {
   const { data: forms = [], isLoading: isLoadingForms } = useQuery<BriefingForm[], Error>({
     queryKey: [BRIEFINGS_QUERY_KEY],
     queryFn: fetchBriefingForms,
+    staleTime: 300000, // 5 minutes of cache
   });
   
   const { data: responses = [], isLoading: isLoadingResponses } = useQuery<BriefingResponse[], Error>({
     queryKey: [RESPONSES_QUERY_KEY],
     queryFn: fetchBriefingResponses,
+    staleTime: 300000, // 5 minutes of cache
   });
   
   const isLoading = isLoadingForms || isLoadingResponses;

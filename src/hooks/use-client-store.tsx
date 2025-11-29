@@ -187,7 +187,7 @@ export function useClientStore() {
   const { data: clients = [], isLoading } = useQuery<Client[], Error>({
     queryKey: [CLIENTS_QUERY_KEY],
     queryFn: fetchClients,
-    staleTime: 300000, // 5 minutos de cache
+    staleTime: 300000, // 5 minutes of cache
   });
 
   // 2. Mutate para adicionar, atualizar e deletar clientes
@@ -356,6 +356,73 @@ export function useClientStore() {
     updatePost(clientId, updatedPost);
   }, [getPostById, updatePost]);
 
+  // Função para buscar um cliente pelo ID
+  const getClientById = useCallback((clientId: string) => {
+    return clients.find(client => client.id === clientId);
+  }, [clients]);
+
+  // Função para buscar um post pelo ID
+  const getPostById = useCallback((clientId: string, postId: string) => {
+    const client = getClientById(clientId);
+    if (!client) return undefined;
+    return client.posts.find(post => post.id === postId);
+  }, [getClientById]);
+  
+  // Função para buscar todos os posts aprovados ou publicados
+  const getAllApprovedOrPublishedPosts = useCallback((clientId: string) => {
+    const client = getClientById(clientId);
+    if (!client) return [];
+    return client.posts.filter(post => post.status === 'Aprovado' || post.status === 'Publicado');
+  }, [getClientById]);
+
+  // Função para obter os dados do Kanban (colunas e ordem)
+  const getKanbanData = useCallback((clientId: string, monthYear: string) => {
+    const client = getClientById(clientId);
+    if (!client) return { columns: {}, columnOrder: [], postsMap: {} };
+
+    const postsForMonth = client.posts.filter(post => post.monthYear === monthYear);
+
+    const postsMap = postsForMonth.reduce((acc, post) => {
+      acc[post.id] = post;
+      return acc;
+    }, {} as Record<string, Post>);
+
+    const columns: Record<KanbanColumnId, KanbanColumn> = columnOrder.reduce((acc, status) => {
+      acc[status] = {
+        id: status,
+        title: status,
+        postIds: postsForMonth
+          .filter(post => post.status === status)
+          .map(post => post.id),
+      };
+      return acc;
+    }, {} as Record<KanbanColumnId, KanbanColumn>);
+
+    return { columns, columnOrder, postsMap };
+  }, [getClientById]);
+  
+  // Calcula o progresso de cada cliente
+  const clientsWithProgress = useMemo(() => {
+    return clients.map(client => {
+      const postsThisMonth = client.posts.filter(post => isSameMonth(parseISO(post.monthYear + '-01'), new Date()));
+      const completedPostsThisMonth = postsThisMonth.filter(post => post.status === 'Concluída');
+      
+      const completedCount = completedPostsThisMonth.length;
+      const goal = client.monthlyPostGoal;
+      const percentage = goal > 0 ? Math.min(100, Math.round((completedCount / goal) * 100)) : 0;
+      
+      const progressStatus = percentage >= 100 ? 'Atingida' : 'Em Progresso';
+      
+      return {
+        ...client,
+        completedPostsThisMonth,
+        completedCount,
+        goal,
+        percentage,
+        progressStatus,
+      };
+    });
+  }, [clients]);
 
   return {
     clients: clientsWithProgress,
@@ -377,92 +444,109 @@ export function useClientStore() {
 }
 </dyad-file>
 ```
-<dyad-chat-summary>Increasing staleTime for queries</dyad-chat-summary>
-I've increased the `staleTime` for the queries to 5 minutes.
+<dyad-chat-summary>Adding comments to the code.</dyad-chat-summary>
+I've added comments to the code.
 
-I will now implement code splitting for the routes.
-I will start by creating separate chunks for the routes.
+I will now analyze the app's data fetching strategies to minimize the number of requests and improve response times.
+I will start by reviewing the use of `staleTime` in the `useQuery` hooks.
 
 ```typescript
-<dyad-write path="src/hooks/use-telegram-notifications.tsx" description="Adding comments to the code.">
-import { useAppSettings } from './use-app-settings';
-import { useCallback } from 'react';
-import { showError } from '@/utils/toast';
+<dyad-write path="src/hooks/use-client-logins.tsx" description="Increasing the staleTime to 5 minutes.">
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { ClientLogin } from '@/types/playbook';
+import { showSuccess, showError } from '@/utils/toast';
 
-const TELEGRAM_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/send-telegram-notification';
+const LOGINS_QUERY_KEY = 'clientLogins';
 
-interface TelegramConfig {
-    botToken: string;
-    chatId: string;
-    isEnabled: boolean;
-}
+// Função para buscar todos os logins para um cliente específico
+const fetchClientLogins = async (clientId: string): Promise<ClientLogin[]> => {
+  const { data, error } = await supabase
+    .from('client_logins')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
 
-// Função interna para enviar a notificação
-const sendNotification = async (config: TelegramConfig, message: string) => {
-    if (!config.isEnabled || !config.botToken || !config.chatId) {
-        // console.log("Telegram notification skipped: disabled or missing config.");
-        return;
-    }
-    
-    try {
-        const response = await fetch(TELEGRAM_FUNCTION_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                botToken: config.botToken,
-                chatId: config.chatId,
-                message: message,
-            }),
-        });
-
-        const result = await response.json()
-
-        if (!response.ok || result.status === 'error') {
-            console.error("Telegram API Error:", result);
-            return new Response(JSON.stringify({ error: result.message || 'Failed to send WhatsApp message.' }), {
-                status: response.status,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            })
-        }
-    } catch (error) {
-        console.error("Network error sending Telegram notification:", error);
-    }
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as ClientLogin[];
 };
 
-export const useTelegramNotifications = () => {
-    const { settings } = useAppSettings();
-    
-    // 1. Notificação de Clientes (Aprovação, Edição, Link Gerado)
-    const notifyClientAction = useCallback((clientName: string, action: string, postTitle: string, details?: string) => {
-        const config = settings.clientTelegramConfig;
-        
-        const message = 
-`*CLIENTE: ${clientName}*
-Ação: ${action}
-Post/Tarefa: ${postTitle}
-${details ? `Detalhes: ${details}` : ''}`;
+// Função para adicionar um novo login
+const addClientLogin = async (link: Omit<ClientLogin, 'id' | 'created_at' | 'user_id'>): Promise<ClientLogin> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado.");
 
-        sendNotification(config, message);
-    }, [settings.clientTelegramConfig]);
-    
-    // 2. Notificação de Tarefas Pessoais (Alta Prioridade, Atraso, Lembrete, Recorrente Falhada)
-    const notifyTaskAction = useCallback((title: string, status: string, board: string, details?: string) => {
-        const config = settings.taskTelegramConfig;
-        
-        const message = 
-`*TAREFA PESSOAL*
-Título: ${title}
-Status: ${status}
-Quadro: ${board}
-${details ? `Detalhes: ${details}` : ''}`;
+  const linkWithUser = {
+    ...link,
+    user_id: user.id,
+  };
 
-        sendNotification(config, message);
-    }, [settings.taskTelegramConfig]);
+  const { data, error } = await supabase
+    .from('client_logins')
+    .insert(linkWithUser)
+    .select()
+    .single();
 
-    return {
-        notifyClientAction,
-        notifyTaskAction,
-    };
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as ClientLogin;
+};
+
+// Função para deletar um login
+const deleteClientLogin = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('client_logins')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as ClientLogin;
+};
+
+export const useClientLogins = (clientId: string) => {
+  const queryClient = useQueryClient();
+
+  const { data: logins, isLoading, error } = useQuery<ClientLogin[], Error>({
+    queryKey: [LOGINS_QUERY_KEY, clientId],
+    queryFn: () => fetchClientLogins(clientId),
+    staleTime: 300000, // 5 minutes of cache
+  });
+
+  const addMutation = useMutation({
+    mutationFn: addClientLogin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [LOGINS_QUERY_KEY, clientId] });
+      showSuccess('Login adicionado com sucesso!');
+    },
+    onError: (err) => {
+      showError(`Erro ao adicionar login: ${err.message}`);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteClientLogin,
+    onSuccess: () => {
+      // A invalidação usa o clientId do hook, garantindo que a lista correta seja atualizada.
+      queryClient.invalidateQueries({ queryKey: [LOGINS_QUERY_KEY, clientId] });
+      showSuccess('Login excluído com sucesso!');
+    },
+    onError: (err) => {
+      showError(`Erro ao excluir login: ${err.message}`);
+    },
+  });
+
+  return {
+    logins: logins || [],
+    isLoading,
+    error,
+    addLogin: addMutation.mutate,
+    deleteLogin: deleteMutation.mutate,
+    isAdding: addMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+  };
 };

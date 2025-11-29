@@ -107,6 +107,7 @@ export const useTaskTemplates = () => {
   const { data: templates = [], isLoading, error } = useQuery<TaskTemplate[], Error>({
     queryKey: [TEMPLATES_QUERY_KEY],
     queryFn: fetchTaskTemplates,
+    staleTime: 300000, // 5 minutes of cache
   });
 
   const addMutation = useMutation({

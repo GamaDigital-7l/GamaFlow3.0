@@ -183,7 +183,7 @@ export function useTaskStore() {
     queryKey: [TASKS_QUERY_KEY],
     queryFn: fetchTasks,
     enabled: !!currentUserId && !isLoadingSession,
-    staleTime: 5000, // Dados frescos por 5 segundos
+    staleTime: 300000, // 5 minutes of cache
   });
 
   // 2. Busca de Templates (para geração)
@@ -193,7 +193,7 @@ export function useTaskStore() {
       const { data } = await supabase.from('task_templates').select('*');
       return data as TaskTemplate[] || [];
     },
-    staleTime: Infinity, // Templates raramente mudam
+    staleTime: 300000, // 5 minutes of cache
   });
 
   // Mutação para Adicionar (usada internamente para geração)
@@ -399,160 +399,3 @@ export function useTaskStore() {
     isDeleting: deleteMutation.isPending,
   };
 }
-</dyad-file>
-```
-<dyad-chat-summary>Adding comments to the code.</dyad-chat-summary>
-I've added comments to the code.
-
-I will now analyze the app's data fetching strategies to minimize the number of requests and improve response times.
-I will start by reviewing the use of `staleTime` in the `useQuery` hooks.
-
-```typescript
-<dyad-write path="src/hooks/use-client-logins.tsx" description="Increasing the staleTime to 5 minutes.">
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { ClientLogin } from '@/types/playbook';
-import { showSuccess, showError } from '@/utils/toast';
-
-const LOGINS_QUERY_KEY = 'clientLogins';
-
-// Função para buscar todos os logins para um cliente específico
-const fetchClientLogins = async (clientId: string): Promise<ClientLogin[]> => {
-  const { data, error } = await supabase
-    .from('client_logins')
-    .select('*')
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data as ClientLogin[];
-};
-
-// Função para adicionar um novo login
-const addClientLogin = async (link: Omit<ClientLogin, 'id' | 'created_at' | 'user_id'>): Promise<ClientLogin> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Usuário não autenticado.");
-
-  const linkWithUser = {
-    ...link,
-    user_id: user.id,
-  };
-
-  const { data, error } = await supabase
-    .from('client_logins')
-    .insert(linkWithUser)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data as ClientLogin;
-};
-
-// Função para deletar um login
-const deleteClientLogin = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('client_logins')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-};
-
-export const useClientLogins = (clientId: string) => {
-  const queryClient = useQueryClient();
-
-  const { data: logins, isLoading, error } = useQuery<ClientLogin[], Error>({
-    queryKey: [LOGINS_QUERY_KEY, clientId],
-    queryFn: () => fetchClientLogins(clientId),
-    staleTime: 300000, // 5 minutes of cache
-  });
-
-  const addMutation = useMutation({
-    mutationFn: addClientLogin,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [LOGINS_QUERY_KEY, clientId] });
-      showSuccess('Login adicionado com sucesso!');
-    },
-    onError: (err) => {
-      showError(`Erro ao adicionar login: ${err.message}`);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteClientLogin,
-    onSuccess: () => {
-      // A invalidação usa o clientId do hook, garantindo que a lista correta seja atualizada.
-      queryClient.invalidateQueries({ queryKey: [LOGINS_QUERY_KEY, clientId] });
-      showSuccess('Login excluído com sucesso!');
-    },
-    onError: (err) => {
-      showError(`Erro ao excluir login: ${err.message}`);
-    },
-  });
-
-  return {
-    logins: logins || [],
-    isLoading,
-    error,
-    addLogin: addMutation.mutate,
-    deleteLogin: deleteMutation.mutate,
-    isAdding: addMutation.isPending,
-    isDeleting: deleteMutation.isPending,
-  };
-};
-</dyad-file>
-```
-
-```typescript
-<dyad-write path="src/hooks/use-client-feedback.tsx" description="Increasing the staleTime to 5 minutes.">
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { showError } from '@/utils/toast';
-import { PostgrestError } from '@supabase/supabase-js';
-
-export interface ClientFeedback {
-  id: string;
-  client_id: string;
-  feedback: string;
-  type: 'praise' | 'improvement';
-  created_at: string;
-}
-
-const FEEDBACK_QUERY_KEY = 'clientFeedback';
-
-const fetchClientFeedback = async (): Promise<ClientFeedback[]> => {
-  // Nota: A política RLS permite que usuários autenticados leiam todos os feedbacks.
-  const { data, error } = await supabase
-    .from('client_feedback')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data as ClientFeedback[];
-};
-
-export const useClientFeedback = () => {
-  const { data: feedback = [], isLoading, error } = useQuery<ClientFeedback[], Error>({
-    queryKey: [FEEDBACK_QUERY_KEY],
-    queryFn: fetchClientFeedback,
-    staleTime: 300000, // 5 minutes of cache
-  });
-
-  if (error) {
-    showError(`Erro ao carregar feedbacks: ${error.message}`);
-  }
-
-  return {
-    feedback,
-    isLoading,
-    error,
-  };
-};
