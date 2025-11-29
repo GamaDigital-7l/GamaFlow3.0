@@ -56,13 +56,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const mainItems = filteredNavItems.filter(item => item.isMain);
   const secondaryItems = filteredNavItems.filter(item => !item.isMain);
 
-  // If it's a client, the only internal navigation is the Profile (which is in the Dropdown)
-  // The client's main navigation is the Playbook, which is the index of the protected route.
-  const clientNavItems = userRole === 'client' ? [] : filteredNavItems;
-
-  // Determine the client's playbook link
-  const clientPlaybookLink = clientId ? `/playbook/${clientId}` : '/login'; // Fallback to login if no client ID
-
   // Renderiza um item de navegação
   const renderNavItem = (item: typeof navItems[0], isExpanded: boolean) => (
     <Link
@@ -85,56 +78,61 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   );
 
   // Renderiza a barra lateral no modo COMPACTO (Desktop)
-  const renderCompactSidebar = () => (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-20 flex-shrink-0",
-        "w-20 bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-lg",
-        "hidden md:flex flex-col p-4 space-y-4", // Apenas desktop
-        isOpen && "hidden" // Esconde quando o menu expandido está aberto
-      )}
-    >
-      {/* Logo/Título Compacto */}
-      <div className="flex justify-center mb-4">
-        <h2 className="text-xl font-bold text-dyad-500">GC</h2>
-      </div>
-      
-      {/* Itens Principais */}
-      <nav className="flex flex-col space-y-2">
-        {mainItems.map(item => renderNavItem(item, false))}
-        
-        {/* Link do Playbook para Clientes (se for o caso) */}
-        {isClient && (
-            <Link
-                to={clientPlaybookLink}
-                className={cn(
-                    "flex items-center p-3 rounded-lg transition-colors duration-200 justify-center",
-                    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    location.pathname.startsWith('/playbook')
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                        : "text-sidebar-foreground",
-                )}
-                title="Portal do Cliente"
-            >
-                <FileText className="h-5 w-5" />
-            </Link>
+  const renderCompactSidebar = () => {
+    const isClient = userRole === 'client';
+    const clientPlaybookLink = clientId ? `/playbook/${clientId}` : '/login';
+    
+    return (
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-20 flex-shrink-0",
+          "w-20 bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-lg",
+          "hidden md:flex flex-col p-4 space-y-4", // Apenas desktop
+          isOpen && "hidden" // Esconde quando o menu expandido está aberto
         )}
+      >
+        {/* Logo/Título Compacto */}
+        <div className="flex justify-center mb-4">
+          <h2 className="text-xl font-bold text-dyad-500">GC</h2>
+        </div>
         
-        {/* Botão para Abrir Menu Completo (Apenas para Admin/User) */}
-        {!isClient && (
-            <Button
-                variant="ghost"
-                size="icon"
-                className="text-sidebar-foreground hover:bg-sidebar-accent mt-4"
-                onClick={() => setIsOpen(true)}
-                title="Menu Completo"
-            >
-                <Menu className="h-6 w-6" />
-            </Button>
-        )}
-      </nav>
-    </aside>
-  );
+        {/* Itens Principais */}
+        <nav className="flex flex-col space-y-2">
+          {mainItems.map(item => renderNavItem(item, false))}
+          
+          {/* Link do Playbook para Clientes (se for o caso) */}
+          {isClient && (
+              <Link
+                  to={clientPlaybookLink}
+                  className={cn(
+                      "flex items-center p-3 rounded-lg transition-colors duration-200 justify-center",
+                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      location.pathname.startsWith('/playbook')
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
+                          : "text-sidebar-foreground",
+                  )}
+                  title="Portal do Cliente"
+              >
+                  <FileText className="h-5 w-5" />
+              </Link>
+          )}
+          
+          {/* Botão para Abrir Menu Completo (Apenas para Admin/User) */}
+          {!isClient && (
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-sidebar-foreground hover:bg-sidebar-accent mt-4"
+                  onClick={() => setIsOpen(true)}
+                  title="Menu Completo"
+              >
+                  <Menu className="h-6 w-6" />
+              </Button>
+          )}
+        </nav>
+      </aside>
+    );
+  };
 
   // Renderiza a barra lateral no modo EXPANDIDO (Mobile ou Modal Desktop)
   const renderExpandedSidebar = () => (
