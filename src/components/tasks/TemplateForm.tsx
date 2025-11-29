@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TaskTemplate, TaskPriority, TargetBoard, DayOfWeek, TaskCategory, TaskType } from '@/types/task';
-import { Loader2, Checkbox } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { showSuccess, showError } from '@/utils/toast';
