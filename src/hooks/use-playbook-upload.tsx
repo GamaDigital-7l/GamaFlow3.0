@@ -35,6 +35,7 @@ export const usePlaybookUpload = (clientId: string) => {
         .from('playbook-files') // Substitua pelo nome do seu bucket
         .getPublicUrl(data.path);
 
+      console.log("Uploaded file URL:", publicUrl); // Adicionando log
       showSuccess(`Upload de '${file.name}' concluído!`);
       return { url: publicUrl, type: file.type };
     } catch (error) {

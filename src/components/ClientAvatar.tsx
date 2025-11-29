@@ -43,7 +43,7 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ name, logoUrl, class
       ) : (
         <img 
           src={logoUrl} 
-          alt={`${name} Logo`} 
+          alt={name} 
           className="w-full h-full object-cover object-center"
           onError={() => setImageError(true)}
         />

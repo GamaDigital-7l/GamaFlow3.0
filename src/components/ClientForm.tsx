@@ -69,6 +69,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCanc
       monthlyPostGoal: goal,
     };
 
+    console.log("Client data being submitted:", newClient); // Adicionando log
     onSubmit(newClient);
   };
 
