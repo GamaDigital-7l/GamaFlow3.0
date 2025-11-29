@@ -35,7 +35,6 @@ const navItems = [
   { name: "CRM", href: "/crm", icon: Briefcase, roles: ['admin'] },
   { name: "Propostas", href: "/proposals", icon: Send, roles: ['admin'] },
   { name: "Briefings", href: "/briefings", icon: ClipboardList, roles: ['admin'] },
-  // Removido Templates Onboarding
   { name: "Financeiro", href: "/financeiro", icon: DollarSign, roles: ['admin'] },
   { name: "Metas", href: "/goals", icon: Target, roles: ['admin', 'user'] },
   { name: "Feedbacks", href: "/admin/feedback", icon: MessageSquare, roles: ['admin'] },
@@ -77,14 +76,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         className={cn(
           "fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out",
           "bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-lg",
-          isMobile ? "w-full" : "w-64", // Largura total no mobile, 64 no desktop
+          isMobile ? "w-full" : "w-20", // Largura total no mobile, 20 no desktop
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-full flex-col p-4">
           {/* Header and Close Button */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-dyad-500">Gama Creative</h2>
+            <h2 className="text-xl font-bold text-dyad-500">GC</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -111,8 +110,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 )}
                 onClick={() => setIsOpen(false)} // Close on click
               >
-                <item.icon className="h-5 w-5 mr-3" />
-                <span className="font-medium">{item.name}</span>
+                <item.icon className="h-5 w-5 mr-0" /> {/* Removido o espaçamento */}
+                {/* Removido o texto */}
               </Link>
             ))}
             
@@ -129,8 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                     )}
                     onClick={() => setIsOpen(false)}
                 >
-                    <FileText className="h-5 w-5 mr-3" />
-                    <span className="font-medium">Meu Portal</span>
+                    <FileText className="h-5 w-5 mr-0" /> {/* Removido o espaçamento */}
                 </Link>
             )}
           </nav>

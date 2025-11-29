@@ -2,16 +2,15 @@ import React from 'react';
 import { Task, TaskCategory, TaskPriority } from '@/types/task';
 import { TaskCard } from './TaskCard';
 import { cn } from '@/lib/utils';
-import { QuickTaskAdd } from './QuickTaskAdd'; // Importando o QuickTaskAdd
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface TaskBoardProps {
   title: string;
   tasks: Task[];
   onComplete: (id: string) => void;
-  onEdit: (task: Task) => void; // Mantendo onEdit para que o TaskCard possa abrir o modal de edição na página Index
+  onEdit: (task: Task) => void;
   className?: string;
-  
-  // Props para Adição Rápida
   allowQuickAdd: boolean;
   defaultCategory?: TaskCategory;
   defaultPriority?: TaskPriority;
@@ -22,7 +21,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   title, 
   tasks, 
   onComplete, 
-  onEdit, // Mantendo onEdit
+  onEdit,
   className,
   allowQuickAdd,
   defaultCategory = 'Geral',
@@ -31,18 +30,21 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 }) => {
   return (
     <div className={cn("space-y-3 p-4 bg-card border rounded-lg shadow-sm", className)}>
-      <h3 className="text-lg font-bold text-foreground/90 border-b pb-2 mb-2">
-        {title} ({tasks.length})
-      </h3>
-      
-      {/* Adição Rápida no Topo do Quadro */}
-      {allowQuickAdd && (
-        <QuickTaskAdd 
-          defaultCategory={defaultCategory}
-          defaultPriority={defaultPriority}
-          onOpenDetailedForm={onOpenDetailedForm}
-        />
-      )}
+      <div className="flex justify-between items-center border-b pb-2 mb-2">
+        <h3 className="text-lg font-bold text-foreground/90">
+          {title} ({tasks.length})
+        </h3>
+        {allowQuickAdd && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onOpenDetailedForm}
+            className="h-8 px-2 text-sm"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Adicionar tarefa
+          </Button>
+        )}
+      </div>
 
       <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
         {tasks.length === 0 ? (
@@ -56,7 +58,6 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               task={task} 
               onComplete={onComplete} 
               onEdit={onEdit} 
-              // onDelete não é mais passado, pois TaskCard usa o hook
             />
           ))
         )}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Menu, LogOut, User, Settings, Notebook } from "lucide-react";
+import { Menu, LogOut, User, Settings, Notebook, LayoutDashboard, Users, FileText, BarChart3, ListTodo, UserCog, MessageSquare, ClipboardList, Target, Briefcase, DollarSign, Send } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
