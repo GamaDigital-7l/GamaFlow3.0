@@ -27,10 +27,10 @@ import { DailySummaryCard } from "@/components/DailySummaryCard";
 // Novo componente para renderizar o quadro de Hábitos
 interface HabitBoardProps {
   habits: any[]; // Usamos 'any' pois são Habit & Status
-  onOpenDetailedForm: () => void;
+  // onOpenDetailedForm removido, pois não adicionamos tarefas comuns aqui
 }
 
-const HabitBoard: React.FC<HabitBoardProps> = ({ habits, onOpenDetailedForm }) => {
+const HabitBoard: React.FC<HabitBoardProps> = ({ habits }) => {
   return (
     <div className={cn("space-y-3 p-4 bg-card border rounded-xl shadow-sm")}>
       <h3 className="text-lg font-bold text-foreground/90 border-b pb-2 mb-2 flex items-center space-x-2">
@@ -38,7 +38,17 @@ const HabitBoard: React.FC<HabitBoardProps> = ({ habits, onOpenDetailedForm }) =
         <span>Hábitos de Hoje ({habits.length})</span>
       </h3>
       
-      {/* Não permitimos adição rápida de tarefas comuns aqui, apenas hábitos */}
+      {/* Botão para adicionar novo hábito (Redireciona para a página de configuração) */}
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        asChild
+        className="h-8 px-2 text-sm text-dyad-500 hover:bg-dyad-50 dark:hover:bg-dyad-950/50"
+      >
+        <Link to="/tasks">
+          <ListPlus className="h-4 w-4 mr-1" /> Gerenciar Hábitos
+        </Link>
+      </Button>
       
       <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
         {habits.length === 0 ? (
@@ -102,7 +112,7 @@ const Index = () => {
 
   // Filtra hábitos ativos que são esperados para hoje
   const activeHabitsToday = useMemo(() => {
-    return allHabits.filter(h => h.isExpectedToday);
+    return allHabits.filter(h => h.isExpectedToday && !h.isCompletedToday); // Apenas hábitos esperados E não concluídos
   }, [allHabits]);
 
   const taskBoards = useMemo(() => [
@@ -110,7 +120,7 @@ const Index = () => {
       title: "Prioridade Alta", 
       tasks: todayHigh, 
       className: "",
-      allowQuickAdd: true, // Reativando para o novo botão inline
+      allowQuickAdd: true,
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Alta' as TaskPriority 
     },
@@ -118,7 +128,7 @@ const Index = () => {
       title: "Prioridade Média", 
       tasks: todayMedium, 
       className: "",
-      allowQuickAdd: true, // Reativando para o novo botão inline
+      allowQuickAdd: true,
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Média' as TaskPriority 
     },
@@ -126,7 +136,7 @@ const Index = () => {
       title: "Prioridade Baixa", 
       tasks: thisWeekLow, 
       className: "",
-      allowQuickAdd: true, // Reativando para o novo botão inline
+      allowQuickAdd: true,
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
@@ -250,15 +260,12 @@ const Index = () => {
         {/* Quadro de Hábitos de Hoje (Penúltimo) */}
         <HabitBoard 
           habits={activeHabitsToday}
-          onOpenDetailedForm={handleCloseDetailedForm}
         />
       </div>
 
       <Separator />
       
       {/* 2. Resumo Diário de IA e Métricas (NOVO RODAPÉ) */}
-      {/* Ajuste: Grid de 1 coluna no mobile, 3 no lg */}
-      
       {/* 3. Progresso de Clientes e Feedbacks (RODAPÉ) */}
       {userRole === 'admin' && (
         <div className="space-y-6">
