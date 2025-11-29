@@ -72,7 +72,7 @@ export const AppShell: React.FC = () => {
     <div className="flex min-h-screen bg-background">
       
       {/* Sidebar (Compacta no Desktop, Modal no Mobile/Expandido) */}
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsOpen} />
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content Area */}
       <div className={cn(
