@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage";
 import PostApprovalPage from "./pages/PostApprovalPage";
 import ApprovalConfirmationPage from "./pages/ApprovalConfirmationPage";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { Loader2 } from "lucide-react";
 
 const Index = lazy(() => import("./pages/Index"));
 const Clients = lazy(() => import("./pages/Clients"));
@@ -48,8 +49,8 @@ const AdminDashboard = withRole(Index, ["admin", "user"]); // Dashboard agora é
 const AdminAppSettings = withRole(AppSettingsPage, "admin");
 const AdminClientFeedback = withRole(ClientFeedbackPage, "admin");
 const AuthenticatedGoals = withRole(GoalsPage, ["admin", "user"]);
-const AdminCrm = withRole(CrmPage, "admin");
-const AdminFinanceiro = withRole(FinanceiroPage, "admin");
+const CrmPage = withRole(CrmPage, "admin");
+const FinanceiroPage = withRole(FinanceiroPage, "admin");
 const AdminBriefings = withRole(BriefingsPage, "admin");
 const AdminBriefingTemplates = withRole(BriefingTemplatesPage, "admin");
 const AdminProposals = withRole(ProposalsPage, "admin");
@@ -99,7 +100,7 @@ const App = () => (
                 <Route path="tasks" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminTasksConfig /></Suspense>} />
                 <Route path="goals" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AuthenticatedGoals /></Suspense>} />
                 <Route path="clients" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminClients /></Suspense>} />
-                <Route path="crm" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminCrm /></Suspense>} /> 
+                <Route path="crm" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><CrmPage /></Suspense>} /> 
                 <Route path="proposals" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminProposals /></Suspense>} />
                 
                 {/* Rota de Briefings (Contém a rota de templates aninhada) */}
@@ -108,7 +109,7 @@ const App = () => (
                     <Route path="templates" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminBriefingTemplates /></Suspense>} />
                 </Route>
                 
-                <Route path="financeiro" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AdminFinanceiro /></Suspense>} />
+                <Route path="financeiro" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><FinanceiroPage /></Suspense>} />
                 <Route path="notes" element={<Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />}><AuthenticatedNotes /></Suspense>} />
                 
                 {/* ClientWorkspacePage agora é APENAS para Admin (Kanban/Config Onboarding) */}
