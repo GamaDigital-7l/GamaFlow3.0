@@ -226,13 +226,13 @@ export const useHabits = () => {
   const { data: habits = [], isLoading: isLoadingHabits } = useQuery<Habit[], Error>({
     queryKey: [HABITS_QUERY_KEY],
     queryFn: fetchHabits,
-    staleTime: 300000, // 5 minutos de cache
+    staleTime: 300000, // 5 minutes of cache
   });
 
   const { data: completions = [], isLoading: isLoadingCompletions } = useQuery<HabitCompletion[], Error>({
     queryKey: [COMPLETIONS_QUERY_KEY],
     queryFn: fetchCompletions,
-    staleTime: 5000, // Completions são mais voláteis
+    staleTime: 300000, // 5 minutes of cache
   });
 
   const addMutation = useMutation({

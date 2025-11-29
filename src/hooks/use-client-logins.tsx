@@ -20,18 +20,18 @@ const fetchClientLogins = async (clientId: string): Promise<ClientLogin[]> => {
 };
 
 // Função para adicionar um novo login
-const addClientLogin = async (login: Omit<ClientLogin, 'id' | 'created_at' | 'user_id'>): Promise<ClientLogin> => {
+const addClientLogin = async (link: Omit<ClientLogin, 'id' | 'created_at' | 'user_id'>): Promise<ClientLogin> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado.");
 
-  const loginWithUser = {
-    ...login,
+  const linkWithUser = {
+    ...link,
     user_id: user.id,
   };
 
   const { data, error } = await supabase
     .from('client_logins')
-    .insert(loginWithUser)
+    .insert(linkWithUser)
     .select()
     .single();
 
@@ -51,6 +51,7 @@ const deleteClientLogin = async (id: string): Promise<void> => {
   if (error) {
     throw new Error(error.message);
   }
+  return data as ClientLogin;
 };
 
 export const useClientLogins = (clientId: string) => {
@@ -59,6 +60,7 @@ export const useClientLogins = (clientId: string) => {
   const { data: logins, isLoading, error } = useQuery<ClientLogin[], Error>({
     queryKey: [LOGINS_QUERY_KEY, clientId],
     queryFn: () => fetchClientLogins(clientId),
+    staleTime: 300000, // 5 minutes of cache
   });
 
   const addMutation = useMutation({
