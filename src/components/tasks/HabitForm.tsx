@@ -7,6 +7,7 @@ import { Habit, DayOfWeek } from '@/types/task';
 import { Loader2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
+import { showError } from '@/utils/toast';
 
 interface HabitFormProps {
   initialData?: Habit;
@@ -76,7 +77,14 @@ export const HabitForm: React.FC<HabitFormProps> = ({ initialData, onSubmit, onC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || selectedDays.length === 0) return;
+    if (!title.trim()) {
+        showError('O título do hábito é obrigatório.');
+        return;
+    }
+    if (selectedDays.length === 0) {
+        showError('Selecione pelo menos um dia para a recorrência.');
+        return;
+    }
 
     const frequencyString = daysToFrequency(selectedDays);
 
@@ -85,7 +93,6 @@ export const HabitForm: React.FC<HabitFormProps> = ({ initialData, onSubmit, onC
       title: title.trim(),
       description: description.trim(),
       frequency: frequencyString,
-      // isActive removido
     } as Habit | Omit<Habit, 'id' | 'user_id' | 'created_at'>;
 
     onSubmit(habitData);
@@ -144,8 +151,6 @@ export const HabitForm: React.FC<HabitFormProps> = ({ initialData, onSubmit, onC
         </ToggleGroup>
       </div>
       
-      {/* Checkbox isActive removido */}
-
       <div className="flex justify-between pt-4">
         <Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancelar

@@ -23,6 +23,10 @@ const TARGET_BOARD_TITLES: Record<TargetBoard, string> = {
   agencyTasks: 'Gama Creative (Agência)',
 };
 
+const DAY_LABEL_MAP: Record<DayOfWeek, string> = {
+    Mon: 'Seg', Tue: 'Ter', Wed: 'Qua', Thu: 'Qui', Fri: 'Sex', Sat: 'Sáb', Sun: 'Dom'
+};
+
 // --- Componente de Listagem de Templates ---
 
 interface TemplateListProps {
@@ -53,7 +57,7 @@ const TemplateList: React.FC<TemplateListProps> = ({ templates, onEdit, onDelete
               <Badge variant="outline">{template.category}</Badge>
               <Badge variant="outline">{template.taskType}</Badge>
               <span className="text-xs text-gray-500">
-                {(template.daysOfWeek || []).join(', ')}
+                {(template.daysOfWeek || []).map(d => DAY_LABEL_MAP[d]).join(', ')}
                 {template.timeOfDay && ` às ${template.timeOfDay.substring(0, 5)}`}
               </span>
             </div>

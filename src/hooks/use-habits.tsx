@@ -136,7 +136,8 @@ const isHabitExpectedOnDate = (habit: Habit, date: Date): boolean => {
     if (habit.frequency === 'daily') {
         return true;
     }
-    const dayName = DAY_MAP[getDay(date)];
+    // date-fns getDay retorna 0 para Domingo, 1 para Segunda...
+    const dayName = DAY_MAP[getDay(date)]; 
     const expectedDays = habit.frequency.split(',');
     return expectedDays.includes(dayName);
 };
@@ -296,8 +297,8 @@ export const useHabits = () => {
 
   // Mapeia o status de conclusão e as streaks para cada hábito
   const habitsWithStatus = useMemo(() => {
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
     const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
     today.setHours(0, 0, 0, 0);
     
     return habits.map(habit => {
@@ -326,7 +327,8 @@ export const useHabits = () => {
     today.setHours(0, 0, 0, 0);
 
     habitsWithStatus.forEach(habit => {
-      if (!habit.isCompletedToday) {
+      // Só verifica se o hábito é esperado hoje E não foi concluído
+      if (habit.isExpectedToday && !habit.isCompletedToday) {
         
         const completedDates = completions
             .filter(c => c.habit_id === habit.id)
@@ -341,6 +343,7 @@ export const useHabits = () => {
         const completedYesterday = completedDates.some(date => isSameDay(date, yesterday));
         const completedDayBefore = completedDates.some(date => isSameDay(date, dayBeforeYesterday));
 
+        // Se era esperado ontem E não foi concluído ontem, E era esperado anteontem E não foi concluído anteontem
         if (wasExpectedYesterday && !completedYesterday && wasExpectedDayBefore && !completedDayBefore) {
             alerts.push({
                 habitId: habit.id,
