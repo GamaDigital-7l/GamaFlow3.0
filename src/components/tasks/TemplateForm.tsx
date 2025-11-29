@@ -12,7 +12,7 @@ import { showSuccess, showError } from '@/utils/toast';
 
 interface TemplateFormProps {
   initialData?: TaskTemplate;
-  onSubmit: (template: TaskTemplate | Omit<TaskTemplate, 'id' | 'user_id' | 'created_at'>) => void;
+  onSubmit: (template: TaskTemplate | Omit<TaskTemplate, 'id' | 'user_id' | 'created_at'>> => void;
   onCancel: () => void;
   isSubmitting: boolean;
 }
@@ -65,7 +65,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({ initialData, onSubmi
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.Event<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!title.trim() || daysOfWeek.length === 0) {
