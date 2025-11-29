@@ -24,11 +24,12 @@ import { useAppSettings } from "@/hooks/use-app-settings";
 import { useTheme } from "next-themes";
 
 export const AppShell: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user, userRole, clientId } = useSession(); // Get clientId from session
+  // isOpen agora controla o estado do menu expandido (modal)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
+  const { user, userRole, clientId } = useSession();
   const { settings } = useAppSettings();
   const { theme } = useTheme();
-  const isMobile = useIsMobile(); // Usando o hook para detectar mobile
+  const isMobile = useIsMobile();
 
   // Efeito para prevenir a rolagem do corpo quando a sidebar está aberta no mobile
   useEffect(() => {
@@ -38,7 +39,7 @@ export const AppShell: React.FC = () => {
       document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = ''; // Limpa o estilo ao desmontar
+      document.body.style.overflow = '';
     };
   }, [isSidebarOpen, isMobile]);
 
@@ -46,8 +47,6 @@ export const AppShell: React.FC = () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       showError('Erro ao fazer logout.');
-    } else {
-      // The SessionContextProvider handles redirection after SIGNED_OUT
     }
   };
 
@@ -59,27 +58,34 @@ export const AppShell: React.FC = () => {
   const isAdmin = userRole === 'admin';
   const isClient = userRole === 'client';
   
-  // Determine the correct link for the logo
   const homeLink = isClient && clientId ? `/playbook/${clientId}` : "/";
   
-  // Determine which logo to use
   const logoUrl = theme === 'dark' ? settings.logoDarkUrl : settings.logoLightUrl;
   const finalLogoUrl = logoUrl && logoUrl.trim() !== '' ? logoUrl : '/placeholder.svg';
 
+  // Calcula a margem esquerda para o conteúdo principal no desktop
+  const contentMarginClass = isMobile ? "ml-0" : "md:ml-20"; 
+  // Se o menu expandido estiver aberto no desktop, o conteúdo deve ser empurrado mais
+  const expandedMenuMargin = isSidebarOpen && !isMobile ? "md:ml-[28rem]" : contentMarginClass; // 20 (compacto) + 320 (expandido) = 340px = 21.25rem
+
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar (Always modal/overlay) */}
+      
+      {/* Sidebar (Compacta no Desktop, Modal no Mobile/Expandido) */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out w-full">
+      <div className={cn(
+        "flex flex-col flex-grow transition-all duration-300 ease-in-out w-full",
+        expandedMenuMargin // Aplica a margem dinâmica
+      )}>
         
-        {/* Header/Top Bar (Unified) */}
+        {/* Header/Top Bar */}
         <header className="sticky top-0 z-30 flex items-center justify-between p-4 bg-card border-b border-border shadow-sm">
           
           <div className="flex items-center space-x-4">
-            {/* Menu Button (Visível para Admin OU em mobile) */}
-            {(isAdmin || isMobile) && (
+            {/* Menu Button (Visível para Admin/User) */}
+            {(!isClient) && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -93,7 +99,6 @@ export const AppShell: React.FC = () => {
             {/* Logo do App (Link para Dashboard ou Playbook) */}
             <Link to={homeLink} className={cn(
               "h-8 flex items-center transition-opacity hover:opacity-80",
-              // Removido o ml-4 condicional, o flexbox já lida com o espaçamento
             )}>
               {finalLogoUrl && finalLogoUrl !== '/placeholder.svg' ? (
                 <img 
@@ -157,10 +162,10 @@ export const AppShell: React.FC = () => {
           </div>
         </header>
 
-        {/* Content Wrapper (Ajustando para a regra dos 98% e centralizando) */}
+        {/* Content Wrapper */}
         <main className="flex-grow p-2 md:p-4">
-          <div className="w-full max-w-[98vw] mx-auto h-full"> {/* Re-adicionado container mx-auto para largura limitada */}
-            <Outlet /> {/* Renders the child route content here */}
+          <div className="w-full max-w-[98vw] mx-auto h-full">
+            <Outlet />
           </div>
         </main>
       </div>
