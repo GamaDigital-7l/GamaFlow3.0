@@ -32,6 +32,7 @@ import BriefingTemplatesPage from "./pages/BriefingTemplatesPage";
 import ProposalsPage from "./pages/ProposalsPage";
 import PublicProposalPage from "./pages/PublicProposalPage";
 import NotesPage from "./pages/NotesPage";
+import ForceAdminButton from "./components/ForceAdminButton";
 
 const queryClient = new QueryClient();
 
