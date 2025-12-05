@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode Colors (Ajustado para cinza claro suave #C9CED3) */
+    --background: 218 15% 88%; /* Cor solicitada: #C9CED3 */
+    --foreground: 222.2 84% 4.9%; /* Preto/Cinza escuro */
+
+    --card: 0 0% 100%; /* Branco para contraste com o fundo */
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Primary: Dyad Pink (338 100% 50%) */
+    --primary: 338 100% 50%; 
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 338 100% 50%; 
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 100%; /* Sidebar branco para contraste */
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 338 100% 50%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 338 100% 50%;
+  }
+
+  .dark {
+    /* Dark Mode Colors (Baseado nas novas cores solicitadas) */
+    /* Fundo Principal: #111827 -> 220 40% 11% */
+    --background: 220 40% 11%; 
+    --foreground: 210 40% 98%; /* Branco/Claro */
+
+    /* Componentes/Cards: #253441 -> 208 28% 20% */
+    --card: 208 28% 20%; 
+    --card-foreground: 210 40% 98%;
+
+    --popover: 208 28% 20%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary: Dyad Pink (338 100% 50%) */
+    --primary: 338 100% 50%;
+    --primary-foreground: 220 40% 11%; /* Texto primário escuro para contraste */
+
+    --secondary: 208 28% 20%; /* Usando a cor do card/componente */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 208 28% 20%;
+    --muted-foreground: 215 10% 75%; /* Cinza claro para texto secundário */
+
+    --accent: 208 28% 20%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 208 28% 30%; /* Borda sutilmente mais clara que o card */
+    --input: 208 28% 20%;
+    --ring: 338 100% 50%;
+
+    /* Sidebar Dark (Ainda mais escuro para contraste com o fundo principal) */
+    --sidebar-background: 220 40% 8%; 
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 338 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 208 28% 20%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 40% 30%;
+    --sidebar-ring: 338 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    /* Aplicando Inter ou similar (Tailwind usa sans por padrão, que é Inter no shadcn/ui) */
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+/* Aplica a largura de 98% em telas menores que o breakpoint 'md' */
+@media (max-width: 767px) {
+  .mobile-container {
+    width: 98%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  /* CORREÇÃO: Desabilita o zoom automático em inputs no mobile */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  textarea {
+    font-size: 16px !important; /* Força o tamanho da fonte para evitar zoom no iOS */
+  }
+}

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  gama-flow-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gama020/gamaflow:latest
+    container_name: gama-flow-app
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_PUBLIC_URL=/
