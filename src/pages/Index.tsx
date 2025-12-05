@@ -23,7 +23,6 @@ import { ClientProgressTable } from "@/components/ClientProgressTable";
 import { GoalProgressSummary } from "@/components/goals/GoalProgressSummary";
 import { Link } from "react-router-dom";
 import { TaskDetailedForm } from "@/components/tasks/TaskDetailedForm";
-import { DailySummaryCard } from "@/components/DailySummaryCard"; // Importando DailySummaryCard
 
 // Novo componente para renderizar o quadro de Hábitos
 interface HabitBoardProps {
@@ -74,6 +73,7 @@ const Index = () => {
     thisWeekLow, 
     woeTasks, 
     agencyTasks,
+    generalTasks, // NOVO: Tarefas gerais/backlog
     completed,
     completeTask,
     updateTask,
@@ -156,6 +156,13 @@ const Index = () => {
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
+    // REMOVIDO: { 
+    //   title: "Geral / Backlog", 
+    //   tasks: generalTasks, 
+    //   className: "bg-muted/50",
+    //   defaultCategory: 'Geral' as TaskCategory, 
+    //   defaultPriority: 'Baixa' as TaskPriority 
+    // },
     { 
       title: "Concluídas",
       tasks: completed, 
@@ -163,7 +170,22 @@ const Index = () => {
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
-  ], [todayHigh, todayMedium, woeTasks, agencyTasks, thisWeekLow, completed]);
+  ], [todayHigh, todayMedium, woeTasks, agencyTasks, thisWeekLow, generalTasks, completed]);
+
+  const scrollOverdue = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      const currentScroll = scrollRef.current.scrollLeft;
+      const newScroll = direction === 'left' 
+        ? currentScroll - scrollAmount 
+        : currentScroll + scrollAmount;
+      
+      scrollRef.current.scrollTo({
+        left: newScroll,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   const OverdueSection = (
     overdue.length > 0 ? (
@@ -229,20 +251,12 @@ const Index = () => {
         </Button>
       </div>
 
-      {/* Resumo de IA (Novo/Restaurado) */}
-      <DailySummaryCard />
-      
       {/* Mobile: Atrasadas vêm primeiro */}
       {isMobile && OverdueSection}
 
       {/* Desktop: Atrasadas vêm depois do título */}
       {!isMobile && OverdueSection}
 
-      <Separator />
-
-      {/* 2. Métricas de Produtividade */}
-      <ProductivityMetrics />
-      
       <Separator />
       
       {/* 1. Organização dos Quadros (Grid Responsivo) */}
@@ -272,11 +286,15 @@ const Index = () => {
 
       <Separator />
       
+      {/* 2. Métricas de Produtividade (Substituindo o Resumo de IA) */}
+      <ProductivityMetrics />
+      
       {/* 3. Progresso de Clientes e Feedbacks (RODAPÉ) */}
       {userRole === 'admin' && (
         <div className="space-y-6">
-            <GoalProgressSummary /> {/* Adicionando o resumo de metas */}
+            {/* ClientProgressTable já é responsivo internamente */}
             <ClientProgressTable />
+            {/* RecentFeedbackList: Ocupa a largura total no mobile */}
             <RecentFeedbackList />
         </div>
       )}

@@ -9,7 +9,7 @@ import Clients from "./pages/Clients";
 import Reports from "./pages/Reports";
 import ClientWorkspacePage from "./pages/ClientWorkspacePage";
 import Login from "./pages/Login";
-import { AppShell } from "./components/AppShell";
+import { AppShell } from "./components/AppShell"; // Importando AppShell do componente
 import { ThemeProvider } from "next-themes";
 import { SessionContextProvider } from "./components/SessionContextProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -32,24 +32,24 @@ import BriefingTemplatesPage from "./pages/BriefingTemplatesPage";
 import ProposalsPage from "./pages/ProposalsPage";
 import PublicProposalPage from "./pages/PublicProposalPage";
 import NotesPage from "./pages/NotesPage";
-import { HomeRedirector } from "./components/HomeRedirector";
 
 const queryClient = new QueryClient();
 
 // Componentes protegidos por role
+const AdminReports = withRole(Reports, "admin");
 const AdminUserManagement = withRole(UserManagementPage, "admin");
 const AdminClients = withRole(Clients, "admin");
 const AdminTasksConfig = withRole(TasksConfigPage, "admin");
+const AdminDashboard = withRole(Index, ["admin", "user"]); // Dashboard agora é para admin/user
 const AdminAppSettings = withRole(AppSettingsPage, "admin");
 const AdminClientFeedback = withRole(ClientFeedbackPage, "admin");
-const AuthenticatedGoals = withRole(GoalsPage, ["admin", "user", "equipe"]); // Equipe também pode ver metas
+const AuthenticatedGoals = withRole(GoalsPage, ["admin", "user"]);
 const AdminCrm = withRole(CrmPage, "admin");
 const AdminFinanceiro = withRole(FinanceiroPage, "admin");
 const AdminBriefings = withRole(BriefingsPage, "admin");
 const AdminBriefingTemplates = withRole(BriefingTemplatesPage, "admin");
 const AdminProposals = withRole(ProposalsPage, "admin");
-const AuthenticatedNotes = withRole(NotesPage, ["admin", "user", "equipe"]); // Equipe também pode ver notas
-const AdminReports = withRole(Reports, "admin");
+const AuthenticatedNotes = withRole(NotesPage, ["admin", "user"]);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -66,6 +66,7 @@ const App = () => (
               <Route path="/approval/confirmation" element={<ApprovalConfirmationPage />} />
               <Route path="/briefing/public/:formId" element={<PublicBriefingPage />} />
               <Route path="/proposal/public/:publicId" element={<PublicProposalPage />} />
+              {/* Rota de Onboarding Removida */}
               <Route path="/login" element={<Login />} />
               
               {/* Rota Dedicada ao Playbook do Cliente (Protegida por Sessão) */}
@@ -78,17 +79,7 @@ const App = () => (
                 } 
               />
               
-              {/* Rota Raiz: Usa HomeRedirector para decidir se redireciona ou renderiza o Dashboard */}
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <HomeRedirector />
-                  </ProtectedRoute>
-                }
-              />
-              
-              {/* Layout Principal Protegido (AppShell) - Rotas internas que precisam do layout */}
+              {/* Layout Principal Protegido (AppShell) - Apenas para Admin/User */}
               <Route 
                 path="/" 
                 element={
@@ -98,7 +89,7 @@ const App = () => (
                 }
               >
                 {/* Rotas Filhas (Renderizadas via Outlet no AppShell) */}
-                {/* A rota index foi movida para o HomeRedirector */}
+                <Route index element={<AdminDashboard />} /> 
                 <Route path="tasks" element={<AdminTasksConfig />} />
                 <Route path="goals" element={<AuthenticatedGoals />} />
                 <Route path="clients" element={<AdminClients />} />
@@ -114,7 +105,7 @@ const App = () => (
                 <Route path="financeiro" element={<AdminFinanceiro />} />
                 <Route path="notes" element={<AuthenticatedNotes />} />
                 
-                {/* ClientWorkspacePage now is ONLY for Admin (Kanban/Config Onboarding) */}
+                {/* ClientWorkspacePage agora é APENAS para Admin (Kanban/Config Onboarding) */}
                 <Route path="clients/:clientId/*" element={<ClientWorkspacePage />} /> 
                 
                 <Route path="reports" element={<AdminReports />} />
