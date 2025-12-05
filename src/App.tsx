@@ -98,6 +98,7 @@ const App = () => (
                 }
               >
                 {/* Rotas Filhas (Renderizadas via Outlet no AppShell) */}
+                {/* A rota index foi movida para o HomeRedirector */}
                 <Route path="tasks" element={<AdminTasksConfig />} />
                 <Route path="goals" element={<AuthenticatedGoals />} />
                 <Route path="clients" element={<AdminClients />} />
