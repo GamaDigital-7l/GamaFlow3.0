@@ -4,6 +4,7 @@ import { useSession } from './SessionContextProvider';
 import { Loader2 } from 'lucide-react';
 import Index from '@/pages/Index';
 import { withRole } from './withRole';
+import { AppShell } from './AppShell'; // Importando AppShell
 
 // Define o componente Dashboard protegido por role localmente
 const AdminDashboard = withRole(Index, ["admin", "user"]);
@@ -20,11 +21,15 @@ export const HomeRedirector: React.FC = () => {
   
   // 1. Verifica se o usuário é cliente ou equipe E tem um ID de cliente vinculado
   if ((userRole === 'client' || userRole === 'equipe') && firstClientId) {
-    // Redireciona imediatamente para o Playbook, ignorando o AppShell
+    // Redireciona imediatamente para o Playbook
     return <Navigate to={`/playbook/${firstClientId}`} replace />;
   }
   
   // 2. Se for admin, user, ou um cliente/equipe sem ID (fallback), renderiza o Dashboard.
-  // O componente AdminDashboard fará a checagem final de role.
-  return <AdminDashboard />;
+  // Como esta rota está fora do AppShell, precisamos renderizar o AppShell aqui para manter o layout.
+  return (
+    <AppShell>
+      <AdminDashboard />
+    </AppShell>
+  );
 };
