@@ -22,9 +22,9 @@ const Login: React.FC = () => {
         // Cliente ou Equipe: Redireciona para o Playbook do primeiro cliente vinculado
         navigate(`/playbook/${firstClientId}`, { replace: true });
       } else if (userRole === 'admin' || userRole === 'user') {
-        // Admin/User: Redireciona para o Dashboard
+        // Admin/User: Redireciona para o Dashboard (rota '/')
         navigate('/', { replace: true });
-      } else if (userRole === 'client' || userRole === 'equipe') {
+      } else if ((userRole === 'client' || userRole === 'equipe') && !firstClientId) {
         // Cliente/Equipe logado, mas sem client_id configurado. Permanece na tela de login com aviso.
         console.error(`Usuário é ${userRole}, mas não tem client_id configurado no perfil.`);
       }

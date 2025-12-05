@@ -35,6 +35,9 @@ export const HomeRedirector: React.FC = () => {
   // 2. Usuário é Admin ou User (Pode ver o Dashboard)
   if (userRole === 'admin' || userRole === 'user') {
     // Renderiza o Dashboard dentro do AppShell
+    // Nota: O AppShell já contém o Outlet, mas como esta é a rota '/', 
+    // precisamos renderizar o Index diretamente aqui, ou usar o AppShell com Outlet e mover o Index para a rota '/' dentro do AppShell.
+    // Como o AppShell é o layout, vamos renderizar o Index diretamente.
     return (
         <AppShell>
             <Index />
