@@ -40,7 +40,7 @@ const AdminReports = withRole(Reports, "admin");
 const AdminUserManagement = withRole(UserManagementPage, "admin");
 const AdminClients = withRole(Clients, "admin");
 const AdminTasksConfig = withRole(TasksConfigPage, "admin");
-const AdminDashboard = withRole(Index, ["admin", "user"]); // Dashboard agora é para admin/user
+// Removido AdminDashboard = withRole(Index, ["admin", "user"]);
 const AdminAppSettings = withRole(AppSettingsPage, "admin");
 const AdminClientFeedback = withRole(ClientFeedbackPage, "admin");
 const AuthenticatedGoals = withRole(GoalsPage, ["admin", "user"]);
@@ -89,7 +89,7 @@ const App = () => (
                 }
               >
                 {/* Rotas Filhas (Renderizadas via Outlet no AppShell) */}
-                <Route index element={<AdminDashboard />} /> 
+                <Route index element={<Index />} /> 
                 <Route path="tasks" element={<AdminTasksConfig />} />
                 <Route path="goals" element={<AuthenticatedGoals />} />
                 <Route path="clients" element={<AdminClients />} />

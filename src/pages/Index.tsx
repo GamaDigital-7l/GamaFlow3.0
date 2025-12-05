@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { TaskBoard } from "@/components/TaskBoard";
 import { useTaskStore } from "@/hooks/use-task-store";
 import { useHabits } from "@/hooks/use-habits";
@@ -21,7 +21,7 @@ import { useSession } from "@/components/SessionContextProvider";
 import { RecentFeedbackList } from "@/components/RecentFeedbackList";
 import { ClientProgressTable } from "@/components/ClientProgressTable";
 import { GoalProgressSummary } from "@/components/goals/GoalProgressSummary";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { TaskDetailedForm } from "@/components/tasks/TaskDetailedForm";
 
 // Novo componente para renderizar o quadro de Hábitos
@@ -82,7 +82,25 @@ const Index = () => {
   } = useTaskStore();
   
   const { habits: allHabits, isLoading: isLoadingHabits, habitAlerts } = useHabits();
-  const { userRole } = useSession();
+  const { userRole, clientIds, isLoading: isLoadingSession } = useSession(); // Get clientIds and session loading state
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  // --- Redirection Logic for Client/Equipe ---
+  useEffect(() => {
+    if (!isLoadingSession && (userRole === 'client' || userRole === 'equipe')) {
+      const firstClientId = clientIds?.[0];
+      if (firstClientId) {
+        // Redirect to their playbook
+        navigate(`/playbook/${firstClientId}`, { replace: true });
+      } else {
+        // If client/equipe but no client ID, redirect to a generic error page or login
+        // Since they are authenticated, redirecting to a safe place (like the Playbook route with a placeholder ID)
+        // is better than showing a broken dashboard.
+        navigate(`/playbook/missing-client-id`, { replace: true });
+      }
+    }
+    // Admin and User roles proceed to render the dashboard
+  }, [isLoadingSession, userRole, clientIds, navigate]);
 
   const isMobile = useIsMobile();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -156,13 +174,6 @@ const Index = () => {
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
-    // REMOVIDO: { 
-    //   title: "Geral / Backlog", 
-    //   tasks: generalTasks, 
-    //   className: "bg-muted/50",
-    //   defaultCategory: 'Geral' as TaskCategory, 
-    //   defaultPriority: 'Baixa' as TaskPriority 
-    // },
     { 
       title: "Concluídas",
       tasks: completed, 
@@ -170,7 +181,7 @@ const Index = () => {
       defaultCategory: 'Geral' as TaskCategory, 
       defaultPriority: 'Baixa' as TaskPriority 
     },
-  ], [todayHigh, todayMedium, woeTasks, agencyTasks, thisWeekLow, generalTasks, completed]);
+  ], [todayHigh, todayMedium, woeTasks, agencyTasks, thisWeekLow, completed]);
 
   const scrollOverdue = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -216,7 +227,7 @@ const Index = () => {
     ) : null
   );
 
-  if (isLoadingTasks || isLoadingHabits) {
+  if (isLoadingTasks || isLoadingHabits || isLoadingSession) {
     return (
       <div className="p-8 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-dyad-500 mx-auto" />
@@ -224,6 +235,26 @@ const Index = () => {
       </div>
     );
   }
+  
+  // Se for cliente/equipe, renderiza um placeholder enquanto o useEffect redireciona
+  if (userRole === 'client' || userRole === 'equipe') {
+      return (
+        <div className="flex justify-center items-center min-h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-dyad-500" />
+            <p className="ml-4 text-muted-foreground">Redirecionando para o Portal do Cliente...</p>
+        </div>
+      );
+  }
+  
+  // Se não for admin ou user, e não foi redirecionado (fallback de segurança)
+  if (userRole !== 'admin' && userRole !== 'user') {
+      return (
+        <div className="p-8 text-center text-red-500">
+            Acesso negado ao Dashboard.
+        </div>
+      );
+  }
+
 
   return (
     <div className="space-y-8 mobile-container">
