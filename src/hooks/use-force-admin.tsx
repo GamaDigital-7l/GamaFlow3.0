@@ -28,9 +28,10 @@ export const useForceAdmin = () => {
 
   const mutation = useMutation({
     mutationFn: callForceAdmin,
-    onSuccess: () => {
+    onSuccess: async () => {
       showSuccess('Role de administrador forçada com sucesso! Atualizando sessão...');
-      queryClient.invalidateQueries('supabaseSession');
+      await queryClient.invalidateQueries('supabaseSession');
+      await supabase.auth.refreshSession()
     },
     onError: (err) => {
       showError(`Erro ao forçar admin: ${err.message}`);
