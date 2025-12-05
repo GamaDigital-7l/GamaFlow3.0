@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import { USERS_QUERY_KEY } from './use-user-management'; // Importando a chave de query
 
-const FORCE_ADMIN_FUNCTION_URL = 'https://byogjmmqittubypowoyb.supabase.co/functions/v1/force-admin';
+const FORCE_ADMIN_FUNCTION_URL = 'https://lgxexrjpemietutfalbp.supabase.co/functions/v1/force-admin';
 
 const callForceAdmin = async (): Promise<void> => {
   const { data: { session } } = await supabase.auth.getSession();
@@ -28,10 +29,13 @@ export const useForceAdmin = () => {
 
   const mutation = useMutation({
     mutationFn: callForceAdmin,
-    onSuccess: async () => {
+    onSuccess: () => {
       showSuccess('Role de administrador forçada com sucesso! Atualizando sessão...');
-      await queryClient.invalidateQueries('supabaseSession');
-      await supabase.auth.refreshSession()
+      // Invalida a sessão e a lista de usuários para forçar a re-leitura
+      queryClient.invalidateQueries({ queryKey: ['supabaseSession'] });
+      queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] });
+      // Força o refresh da página para que o SessionContextProvider recarregue
+      setTimeout(() => window.location.reload(), 1000);
     },
     onError: (err) => {
       showError(`Erro ao forçar admin: ${err.message}`);

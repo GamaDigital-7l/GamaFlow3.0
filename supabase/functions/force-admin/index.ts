@@ -46,7 +46,10 @@ serve(async (req) => {
     // 3. Atualiza o perfil para 'admin' usando a Service Role Key (ignora RLS)
     const { error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
-      .update({ is_admin: true })
+      .update({ 
+        role: 'admin', 
+        client_ids: null, // Remove client_ids
+      })
       .eq('id', userId)
       
     if (profileUpdateError) {
